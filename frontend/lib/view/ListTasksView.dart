@@ -26,6 +26,7 @@ class _ListTasksViewState extends State<ListTasksView> {
                 labelColor: Colors.black,
                 indicatorColor: Colors.blue,
                 tabs: [
+                  
                   Tab(text: "Projects"),
                   Tab(text: "Tasks"),
                   Tab(text: "Subtasks"),

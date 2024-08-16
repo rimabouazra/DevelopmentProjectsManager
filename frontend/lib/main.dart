@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
       ),
       routes: {
         "ListTasks":(context)=>ListTasksView(),
-        "addTasks":(context)=>Addtasksview(),
+        "addTasks":(context)=>AddTasksView(),
       },
       home:ListTasksView(),
     );
