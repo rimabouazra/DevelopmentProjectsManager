@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/widget/ListProjectWidget.dart';
 import 'package:frontend/widget/ListTaskWidget.dart';
 
 class ListTasksView extends StatefulWidget {
@@ -15,6 +16,7 @@ class _ListTasksViewState extends State<ListTasksView> {
         length: 3,
         child: Scaffold(
           appBar: AppBar(
+            centerTitle: true, 
             title: Text("SoftwareDevelopmentProjectsManager"),
             bottom: PreferredSize(
             preferredSize: Size.fromHeight(50.0),
@@ -37,7 +39,7 @@ class _ListTasksViewState extends State<ListTasksView> {
           ),
           body: const TabBarView(
             children: [
-              ListTasksWidget(),
+              ListProjectsWidget(),
               ListTasksWidget(),
               ListTasksWidget(),
             ],

@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/model/Project.dart';
 import 'package:frontend/model/Task.dart';
 import 'package:frontend/provider/TaskModel.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:frontend/provider/ProjectModel.dart'; 
+
 
 class AddTasksView extends StatefulWidget {
-  const AddTasksView({Key? key}) : super(key: key);
+  final String? projectId;
+  const AddTasksView({Key? key, this.projectId}) : super(key: key);
 
   @override
   State<AddTasksView> createState() => _AddTasksViewState();
@@ -17,10 +21,12 @@ class _AddTasksViewState extends State<AddTasksView> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptonController = TextEditingController();
+  Project? _selectedProject;
+
   @override
   Widget build(BuildContext context) {
-    return Consumer<TaskModel>(
-      builder: (context, model, child) {
+    return Consumer2<TaskModel, ProjectModel>(
+      builder: (context, model, projectModel, child) {
       return Scaffold(
       appBar: AppBar(
         title: Text("Add new Task"),
@@ -70,7 +76,7 @@ class _AddTasksViewState extends State<AddTasksView> {
                         ),
                         margin: EdgeInsets.symmetric(vertical: 4.0,horizontal: 10.0),
                         child: Center(
-                          child:Text(_datetime.day.toString(),style: TextStyle(color: Colors.white),),
+                          child:Text(_datetime.day.toString(),style: TextStyle(color: Colors.white)),
                         ),
                       );
                     }
@@ -159,12 +165,41 @@ class _AddTasksViewState extends State<AddTasksView> {
                       ),
                 
                 )),
+                if (widget.projectId == null)
+                Padding(
+              padding: const EdgeInsets.only(top: 12.0),
+              child: DropdownButtonFormField<Project>(
+                decoration: InputDecoration(
+                  labelText: "Select Project",
+                  border: OutlineInputBorder(),
+                ),
+                value: _selectedProject,
+                items: projectModel.projects.map((Project project) {
+                  return DropdownMenuItem<Project>(
+                    value: project,
+                    child: Text(project.title),
+                  );
+                }).toList(),
+                onChanged: (Project? newValue) {
+                  setState(() {
+                    _selectedProject = newValue!;
+                  });
+                },
+                validator: (value) {
+                  if (value == null) {
+                    return 'Please select a project';
+                  }
+                  return null;
+                },
+              ),
+            ),
+
           ])))),
       floatingActionButton: FloatingActionButton(
         child: Icon(Icons.add),
         onPressed: () {
-          if (_formKey.currentState!.validate()) {
-            Task _newTask=Task(_titleController.text,false,_descriptonController.text,_focusedDay);
+          if (_formKey.currentState!.validate() && _selectedProject != null) {
+            Task _newTask=Task(null,_titleController.text,_selectedProject!.projectId,false,_descriptonController.text,_focusedDay);
             model.add(_newTask);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Task saved :)')),

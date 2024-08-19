@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/provider/ProjectModel.dart';
 import 'package:frontend/provider/TaskModel.dart';
 import 'package:frontend/view/AddTasksView.dart';
+import 'package:frontend/view/ListProjectsView.dart';
 import 'package:frontend/view/ListTasksView.dart';
 import 'package:provider/provider.dart';
 
@@ -9,6 +11,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => TaskModel()),
+        ChangeNotifierProvider(create: (_) => ProjectModel()),
       ],
       child: const MyApp(),
     ),
@@ -22,7 +25,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'SoftwareDevelopmentProjectsManager',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,
@@ -30,6 +34,7 @@ class MyApp extends StatelessWidget {
       routes: {
         "ListTasks":(context)=>ListTasksView(),
         "addTasks":(context)=>AddTasksView(),
+        "ListProjects": (context) => ListProjectsView(),
       },
       home:ListTasksView(),
     );

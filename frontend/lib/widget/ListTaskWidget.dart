@@ -4,11 +4,16 @@ import 'package:provider/provider.dart';
 import 'package:frontend/library/globals.dart' as globals;
 
 class ListTasksWidget extends StatelessWidget {
-  const ListTasksWidget({Key? key}) : super(key: key);
+  final String? projectId;
+
+  const ListTasksWidget({Key? key, this.projectId}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Consumer<TaskModel>(builder: (context, model, child) {
+      // ignore: unused_local_variable
+      final filteredTasks = model.tasks[projectId] ?? [];
+
       return ListView.builder(
         itemCount: model.tasks.length,
         itemBuilder: (BuildContext context, int index) {

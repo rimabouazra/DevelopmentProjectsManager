@@ -5,15 +5,21 @@ import 'package:frontend/library/globals.dart' as globals;
 
 class TaskModel extends ChangeNotifier {
    final Map<String,List<Task>> tasks = {
-    globals.Late:[Task("Task 1",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
-    globals.today:[Task("Today Task 1",false,"Create Provider",DateTime.now().add(Duration(days: 1))),Task("Today Task 2 ",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
-    globals.tomorrow:[Task("Tomorrow Task 1",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
-    globals.thisWeek:[Task(" thisWeek Task 1",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
-    globals.nextWeek:[Task("nextWeek Task 1",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
-    globals.thisMonth:[Task("Task 1",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
-    globals.later:[Task("Task 1",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
+    globals.Late:[Task("1","Task 1","1",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
+    globals.today:[Task("2","Today Task 2","2",false,"Create Provider",DateTime.now().add(Duration(days: 1))),Task("1","Today Task 2 ","2",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
+    globals.tomorrow:[Task("2","Tomorrow Task 1","1",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
+    globals.thisWeek:[Task("2"," thisWeek Task 2","2",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
+    globals.nextWeek:[Task("1","nextWeek Task 1","1",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
+    globals.thisMonth:[Task("1","Task 2","2",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
+    globals.later:[Task("1","Task 1","1",false,"Create Provider",DateTime.now().add(Duration(days: 1)))],
   };
   Map<String,List<Task>> get items => tasks;
+
+  final Map<String, List<Task>> tasksByProject = {};
+
+  List<Task> getTasksByProject(String projectId) {
+    return tasksByProject[projectId] ?? [];
+  }
 
   int countTasksByDay(DateTime _datetime) {
     String _key = guessTodoKeyFromDate(_datetime);
@@ -49,4 +55,13 @@ class TaskModel extends ChangeNotifier {
     else if (deadline.isThisMonth){return globals.thisMonth;}
     else{return globals.later;}
   }
+
+  void addTaskToProject(String projectId, Task task) {
+    if (!tasksByProject.containsKey(projectId)) {
+      tasksByProject[projectId] = [];
+    }
+    tasksByProject[projectId]!.add(task);
+    notifyListeners();
   }
+
+}
