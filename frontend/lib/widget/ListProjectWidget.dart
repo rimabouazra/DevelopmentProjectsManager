@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/view/ProjectTasksView.dart';
-import 'package:frontend/widget/ListTaskWidget.dart';
 import 'package:provider/provider.dart';
 import '../provider/ProjectModel.dart';
 
@@ -29,8 +28,8 @@ class ListProjectsWidget extends StatelessWidget {
                       builder: (context) => Scaffold(
                         appBar: AppBar(title: Text("${project.title} Tasks")),
                         body: ProjectTasksView(
-                        projectId: project.projectId,
-                      ),
+                          projectId: project.projectId,
+                        ),
                       ),
                     ),
                   );
@@ -38,6 +37,13 @@ class ListProjectsWidget extends StatelessWidget {
               ),
             ),
           );
+        },
+      ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: UniqueKey(),
+        child: Icon(Icons.add),
+        onPressed: () {
+          Navigator.pushNamed(context, "CreateProject");
         },
       ),
     );

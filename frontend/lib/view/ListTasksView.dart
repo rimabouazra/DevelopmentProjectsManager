@@ -13,7 +13,7 @@ class _ListTasksViewState extends State<ListTasksView> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-        length: 3,
+        length: 2,
         child: Scaffold(
           appBar: AppBar(
             centerTitle: true, 
@@ -31,7 +31,6 @@ class _ListTasksViewState extends State<ListTasksView> {
                   
                   Tab(text: "Projects"),
                   Tab(text: "Tasks"),
-                  Tab(text: "Subtasks"),
                 ],
               ),
             ),
@@ -41,14 +40,7 @@ class _ListTasksViewState extends State<ListTasksView> {
             children: [
               ListProjectsWidget(),
               ListTasksWidget(),
-              ListTasksWidget(),
             ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            child: Icon(Icons.add),
-            onPressed: () { 
-              Navigator.pushNamed(context, "addTasks");
-             },
           ),
         )
       );

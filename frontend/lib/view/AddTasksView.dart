@@ -60,7 +60,7 @@ class _AddTasksViewState extends State<AddTasksView> {
                         width: 20,
                         height: 15,
                         decoration: BoxDecoration(
-                          color:Colors.primaries[model.countTasksByDay(datetime)],
+                          color:Colors.primaries[model.countTasksByDay(datetime)% Colors.primaries.length],
                           borderRadius: BorderRadius.circular(4.0)
                         ),
                         child:Center(
@@ -196,10 +196,11 @@ class _AddTasksViewState extends State<AddTasksView> {
 
           ])))),
       floatingActionButton: FloatingActionButton(
+        heroTag: null,
         child: Icon(Icons.add),
         onPressed: () {
           if (_formKey.currentState!.validate() && _selectedProject != null) {
-            Task _newTask=Task(null,_titleController.text,_selectedProject!.projectId,false,_descriptonController.text,_focusedDay);
+            Task _newTask=Task(null,_titleController.text,_selectedProject!.projectId,false,_descriptonController.text,_focusedDay,[],[]);
             model.add(_newTask);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Task saved :)')),
