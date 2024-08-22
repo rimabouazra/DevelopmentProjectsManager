@@ -1,5 +1,6 @@
 import 'package:dart_date/dart_date.dart';
 import 'package:flutter/material.dart';
+import 'package:frontend/model/Subtask.dart';
 import 'package:frontend/model/Task.dart';
 import 'package:frontend/library/globals.dart' as globals;
 
@@ -7,11 +8,13 @@ class TaskModel extends ChangeNotifier {
   final Map<String, List<Task>> tasks = {
     globals.Late: [
       Task("1", "Task 1", "1", false, "Task's Descriptoion",
-          DateTime.now().add(Duration(days: 1)),[],["Rima"])
+          DateTime.now().add(Duration(days: 1)),[Subtask(id: "1", title: "Subtask 1", isCompleted: false),
+          Subtask(id: "2", title: "Subtask 2", isCompleted: false),],["Rima"])
     ],
     globals.today: [
       Task("2", "Today Task 2", "2", false, "Task's Descriptoion",
-          DateTime.now().add(Duration(days: 1)),[],[]),
+          DateTime.now().add(Duration(days: 1)),[Subtask(id: "3", title: "Subtask 1", isCompleted: false),
+          Subtask(id: "4", title: "Subtask 2", isCompleted: false),],[]),
       Task("1", "Today Task 2 ", "2", false, "Task's Descriptoion",
           DateTime.now().add(Duration(days: 1)),[],[])
     ],

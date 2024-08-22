@@ -4,7 +4,7 @@ import 'package:frontend/model/Comment.dart';
 class Subtask {
   final String id;
   final String title;
-  final bool isCompleted;
+  bool isCompleted;
   final List<Comment> comments;
   bool status;
 
@@ -12,22 +12,21 @@ class Subtask {
     required this.id,
     required this.title,
     this.isCompleted = false,
-    this.comments = const [], 
-    this.status=false,
-  });
+    List<Comment>? comments,
+    this.status = false,
+  }) : comments = comments ?? [];
 
-  void addComment(Comment comment) {
+  void addComment(String developerId, String text) {
+    final comment = Comment(
+      id: UniqueKey().toString(),
+      developerId: developerId,
+      text: text,
+      timestamp: DateTime.now(),
+    );
     comments.add(comment);
   }
 
-  void addCommentToSubtask(Subtask subtask, String developerId, String text) {
-  final comment = Comment(
-    id: UniqueKey().toString(),
-    developerId: developerId,
-    text: text,
-    timestamp: DateTime.now(),
-  );
-  subtask.addComment(comment);
-}
-
+  void markAsCompleted() {
+    isCompleted = true;
+  }
 }

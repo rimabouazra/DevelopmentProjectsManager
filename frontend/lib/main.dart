@@ -5,6 +5,7 @@ import 'package:frontend/provider/ProjectModel.dart';
 import 'package:frontend/provider/TaskModel.dart';
 import 'package:frontend/view/AddTasksView.dart';
 import 'package:frontend/view/ListTasksView.dart';
+import 'package:frontend/view/LoginPage.dart';
 import 'package:frontend/view/SubtasksView.dart';
 import 'package:frontend/view/createProjectView.dart';
 import 'package:frontend/widget/ListProjectWidget.dart';
@@ -25,8 +26,6 @@ void main() {
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
-
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -45,7 +44,7 @@ class MyApp extends StatelessWidget {
               task: ModalRoute.of(context)!.settings.arguments as Task,
             ),
       },
-      home: ListTasksView(),
+      home: LoginPage(),
     );
   }
 }

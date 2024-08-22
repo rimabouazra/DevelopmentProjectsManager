@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/model/User.dart';
 import 'package:frontend/widget/ListProjectWidget.dart';
 import 'package:frontend/widget/ListTaskWidget.dart';
 
 class ListTasksView extends StatefulWidget {
+
   const ListTasksView({Key? key}) : super(key: key);
 
   @override
@@ -13,12 +15,12 @@ class _ListTasksViewState extends State<ListTasksView> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-        length: 2,
-        child: Scaffold(
-          appBar: AppBar(
-            centerTitle: true, 
-            title: Text("SoftwareDevelopmentProjectsManager"),
-            bottom: PreferredSize(
+      length: 2,
+      child: Scaffold(
+        appBar: AppBar(
+          centerTitle: true,
+          title: Text("SoftwareDevelopmentProjectsManager"),
+          bottom: PreferredSize(
             preferredSize: Size.fromHeight(50.0),
             child: Container(
               width: double.infinity,
@@ -28,21 +30,20 @@ class _ListTasksViewState extends State<ListTasksView> {
                 labelColor: Colors.black,
                 indicatorColor: Colors.blue,
                 tabs: [
-                  
                   Tab(text: "Projects"),
                   Tab(text: "Tasks"),
                 ],
               ),
             ),
-            ),
           ),
-          body: const TabBarView(
-            children: [
-              ListProjectsWidget(),
-              ListTasksWidget(),
-            ],
-          ),
-        )
-      );
+        ),
+        body: TabBarView(
+          children: [
+            ListProjectsWidget(),
+            ListTasksWidget(),
+          ],
+        ),
+      ),
+    );
   }
 }
