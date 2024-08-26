@@ -1,6 +1,9 @@
+import 'dart:convert';
+import 'package:frontend/model/auth_helper.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:frontend/model/User.dart';
-import 'package:frontend/view/ListTasksView.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -12,20 +15,42 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   String errorMessage = '';
 
-  void login(BuildContext context) {
-    String email = emailController.text;
-    String password = passwordController.text;
 
-    // Simulate user authentication and role assignment based on email
-    User? user = authenticateUser(email, password);
-    if (user != null) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => ListTasksView()),
+  void login() async {
+    final String email = emailController.text;
+    final String password = passwordController.text;
+
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:3000/users/login'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'email': email,
+          'password': password,
+        }),
       );
-    } else {
+
+      if (response.statusCode == 200) {
+        // ignore: unused_local_variable
+        final Map<String, dynamic> data = json.decode(response.body);
+        final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+        await AuthHelper.saveTokens(
+          response.headers['x-access-token']!,
+          response.headers['x-refresh-token']!,
+        );
+
+        Navigator.pushReplacementNamed(context, 'ListProjects');
+      } else {
+        setState(() {
+          errorMessage = 'Login failed. Status: ${response.statusCode}';
+        });
+      }
+    } catch (e) {
       setState(() {
-        errorMessage = 'Invalid email or password';
+        errorMessage = 'Login failed. Error: $e';
       });
     }
   }
@@ -84,10 +109,7 @@ class _LoginPageState extends State<LoginPage> {
               obscureText: true,
             ),
             SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: () => login(context),
-              child: Text('Login'),
-            ),
+            ElevatedButton(onPressed: login, child: Text('Login')),
             if (errorMessage.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.all(8.0),

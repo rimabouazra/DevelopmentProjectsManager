@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/model/User.dart';
 import 'package:frontend/widget/ListProjectWidget.dart';
 import 'package:frontend/widget/ListTaskWidget.dart';
 
 class ListTasksView extends StatefulWidget {
+  final String? projectId;  // Accept projectId as an optional parameter
 
-  const ListTasksView({Key? key}) : super(key: key);
+  const ListTasksView({Key? key, this.projectId}) : super(key: key);
 
   @override
   _ListTasksViewState createState() => _ListTasksViewState();
@@ -40,7 +40,9 @@ class _ListTasksViewState extends State<ListTasksView> {
         body: TabBarView(
           children: [
             ListProjectsWidget(),
-            ListTasksWidget(),
+            ListTasksWidget(
+              projectId: widget.projectId,  // Pass the projectId to ListTasksWidget
+            ),
           ],
         ),
       ),

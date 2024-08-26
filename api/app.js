@@ -22,18 +22,20 @@ app.use((req, res, next) => {
 
 let authenticate = (req, res, next) => {
     let token = req.header('x-access-token');
-
-    // verify the JWT
-    jwt.verify(token, User.getJWTSecret(), (err, decoded) => {
-        if (err) {
-            // jwt invalid
-            res.status(401).send(err);
-        } else {
-            req.user_id = decoded._id;
-            next();
-        }
+    console.log('Token received:', token);
+  
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+      if (err) {
+        console.error('Token verification failed:', err);
+        return res.status(401).send({ message: 'Unauthorized access' });
+      }
+  
+      req.user_id = decoded._id;
+      next();
     });
-}
+  };
+  
+
 
 // Verify Refresh Token Middleware (verifythe session)
 let verifySession = (req, res, next) => {
@@ -158,7 +160,7 @@ app.get('/projects/:projectId/tasks',authenticate, (req, res) => {
     })
   });
   
-  app.patch('/projects/:projectId/tasks/:taskId',(req,res)=>{
+  app.patch('/projects/:projectId/tasks/:taskId',authenticate,(req,res)=>{
       //update the specified list
       Project.findOne({
         _id: req.params.projectId,
@@ -186,7 +188,7 @@ app.get('/projects/:projectId/tasks',authenticate, (req, res) => {
     })
   });
   
-  app.delete('/projects/:projectId/tasks/:taskId',(req,res)=>{
+  app.delete('/projects/:projectId/tasks/:taskId',authenticate,(req,res)=>{
       //delete the specified list
       Project.findOne({
         _id: req.params.projectId,
@@ -243,39 +245,33 @@ app.get('/projects/:projectId/tasks',authenticate, (req, res) => {
 })
 
   
-  app.post('/users/login', (req, res) => {
-    // User log in
-    let email = req.body.email;
-    let password = req.body.password;
-  
+app.post('/users/login', (req, res) => {
+    const { email, password } = req.body;
+
     User.findByCredentials(email, password).then((user) => {
         return user.createSession().then((refreshToken) => {
-            // Session created successfully - refreshToken returned.
-            //geneate an access auth token for the user
-  
             return user.generateAccessAuthToken().then((accessToken) => {
-                // access auth token generated successfully, now we return an object containing the auth tokens
-                return { accessToken, refreshToken }
+                return { refreshToken, accessToken };
             });
         }).then((authTokens) => {
-            //construct and send the response to the user with their auth tokens in the header and the user object in the body
-            res
-                .header('x-refresh-token', authTokens.refreshToken)
-                .header('x-access-token', authTokens.accessToken)
-                .send(user);
-        })
-    }).catch((e) => {
-        res.status(400).send(e);
+            res.header('x-refresh-token', authTokens.refreshToken);
+            res.header('x-access-token', authTokens.accessToken);
+            res.send(user);
+        });
+    }).catch((err) => {
+        res.status(400).send(err);
     });
-  })
+});
+
   
-  app.get('/users/me/access-token', verifySession, (req, res) => {
+app.get('/users/me/access-token', verifySession, (req, res) => {
     req.userObject.generateAccessAuthToken().then((accessToken) => {
         res.header('x-access-token', accessToken).send({ accessToken });
     }).catch((e) => {
         res.status(400).send(e);
     });
-  })
+});
+
   
   let deleteTasksFromList = (projectId) => {
     Task.deleteMany({

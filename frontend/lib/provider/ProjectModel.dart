@@ -38,4 +38,10 @@ class ProjectModel extends ChangeNotifier {
       throw Exception("User does not have permission to modify projects.");
     }
   }
+
+  void setProjects(List<Project> newProjects) {
+  projects = newProjects;
+  notifyListeners();
+}
+
 }

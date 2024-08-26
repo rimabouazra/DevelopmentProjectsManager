@@ -30,4 +30,19 @@ class Task {
       status = true;
     }
   }
+
+   factory Task.fromJson(Map<String, dynamic> json) {
+    return Task(
+      json['taskId'],
+      json['title'],
+      json['projectId'],
+      json['completed'],
+      json['description'],
+      DateTime.parse(json['dueDate']),
+      (json['subtasks'] as List)
+          .map((subtask) => Subtask.fromJson(subtask))
+          .toList(),
+      List<String>.from(json['developerNames']),
+    );
+  }
 }

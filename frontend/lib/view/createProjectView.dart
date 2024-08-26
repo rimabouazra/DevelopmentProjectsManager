@@ -33,16 +33,6 @@ class _CreateProjectViewState extends State<CreateProjectView> {
           child: Column(
             children: [
               TextFormField(
-                controller: _idController,
-                decoration: InputDecoration(labelText: 'Project ID'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a project ID';
-                  }
-                  return null;
-                },
-              ),
-              TextFormField(
                 controller: _titleController,
                 decoration: InputDecoration(labelText: 'Title'),
                 validator: (value) {
@@ -55,12 +45,6 @@ class _CreateProjectViewState extends State<CreateProjectView> {
               TextFormField(
                 controller: _descriptionController,
                 decoration: InputDecoration(labelText: 'Description'),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a project description';
-                  }
-                  return null;
-                },
               ),
               DropdownButtonFormField<User>(
                 value: _selectedDevelopers.isNotEmpty

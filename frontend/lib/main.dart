@@ -18,6 +18,7 @@ void main() {
         ChangeNotifierProvider(create: (context) => TaskModel()),
         ChangeNotifierProvider(create: (_) => ProjectModel()),
         ChangeNotifierProvider(create: (_) => DeveloperModel()),
+        ChangeNotifierProvider(create: (context) => ProjectModel()),
       ],
       child: const MyApp(),
     ),

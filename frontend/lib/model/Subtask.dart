@@ -29,4 +29,12 @@ class Subtask {
   void markAsCompleted() {
     isCompleted = true;
   }
+
+  factory Subtask.fromJson(Map<String, dynamic> json) {
+    return Subtask(
+      id: json['id'],
+      title: json['title'],
+      isCompleted: json['isCompleted'],
+    );
+  }
 }

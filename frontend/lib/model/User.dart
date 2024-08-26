@@ -8,11 +8,11 @@ enum Role {
 }
 
 class User  extends ChangeNotifier {
-  final String idUtilisateur;
-  final String nomUtilisateur;
-  final String email;
-  final String motDePasse;
-  final Role role;
+   String idUtilisateur;
+   String nomUtilisateur;
+   String email;
+   String motDePasse;
+   Role role;
   User? currentUser;
 
   User({
@@ -33,5 +33,15 @@ class User  extends ChangeNotifier {
 
   bool canModifyProject() {
     return role == Role.Manager || role == Role.Administrator;
+  }
+
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      idUtilisateur: json['userId'],
+      nomUtilisateur: json['name'],
+      email: json['email'],
+      motDePasse: json['password'],
+      role: Role.values[json['role']],  // Assuming role is passed as an index
+    );
   }
 }
