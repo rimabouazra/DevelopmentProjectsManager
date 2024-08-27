@@ -1,4 +1,6 @@
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 
 enum Role {
@@ -11,6 +13,7 @@ class User  extends ChangeNotifier {
    String idUtilisateur;
    String nomUtilisateur;
    String email;
+   final String token;
    String motDePasse;
    Role role;
   User? currentUser;
@@ -19,9 +22,20 @@ class User  extends ChangeNotifier {
     required this.idUtilisateur,
     required this.nomUtilisateur,
     required this.email,
+    required this.token,
     required this.motDePasse,
     required this.role,
   });
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': nomUtilisateur,
+      'email': email,
+      'token': token,
+      'password': motDePasse,
+      'role': role.index,
+    };
+  }
 
   bool canCreateProject() {
     return role == Role.Manager;
@@ -37,11 +51,14 @@ class User  extends ChangeNotifier {
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      idUtilisateur: json['userId'],
+      idUtilisateur: json['_Id'],
       nomUtilisateur: json['name'],
       email: json['email'],
+      token: json['token'] ?? '',
       motDePasse: json['password'],
-      role: Role.values[json['role']],  // Assuming role is passed as an index
+      role: Role.values[json['role']],
     );
   }
+
+  String toJson() => json.encode(toMap());
 }

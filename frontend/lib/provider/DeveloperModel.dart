@@ -1,35 +1,46 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import '../model/User.dart';
+import 'package:http/http.dart' as http;
+
 
 class DeveloperModel extends ChangeNotifier {
-  final List<User> developers = [
-    User(
-    idUtilisateur: '1',
-    nomUtilisateur: 'DevUser',
-    email: 'dev@example.com',
-    motDePasse: 'password123',
+  User _user =User(
+    idUtilisateur: '',
+    nomUtilisateur: '',
+    email: '',
+    token: '',
+    motDePasse: '',
     role: Role.Developer,
-  ),
-  User(
-    idUtilisateur: '3',
-    nomUtilisateur: 'AdminUser',
-    email: 'admin@example.com',
-    motDePasse: 'password123',
-    role: Role.Administrator,
-  )
-  ];
+  );
 
-  List<User> getDevelopers() {
-    return developers.where((user) => user.role == 'Developer').toList();
-  }
+  User get user => _user;
 
-  void addDeveloper(User developer) {
-    developers.add(developer);
+   List<User> _developers = [];
+
+  List<User> get developers => _developers;
+
+  void setUser(String userJson) {
+  final Map<String, dynamic> userMap = json.decode(userJson);
+  _user = User.fromJson(userMap);
+  notifyListeners();
+}
+
+  void setUserFromModel(User user) {
+    _user = user;
     notifyListeners();
   }
 
-  void removeDeveloper(String developerId) {
-    developers.removeWhere((dev) => dev.idUtilisateur == developerId);
-    notifyListeners();
+  Future<void> fetchDevelopers() async {
+    final response = await http.get(Uri.parse('http://localhost:3000/developers'));
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      _developers = data.map((json) => User.fromJson(json)).toList();
+      notifyListeners();
+    } else {
+      throw Exception('Failed to load developers');
+    }
   }
 }

@@ -20,6 +20,12 @@ class _CreateProjectViewState extends State<CreateProjectView> {
   List<User> _selectedDevelopers = [];
 
   @override
+  void initState() {
+    super.initState();
+    Provider.of<DeveloperModel>(context, listen: false).fetchDevelopers();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final developerModel = Provider.of<DeveloperModel>(context);
     return Scaffold(
@@ -50,8 +56,9 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                 value: _selectedDevelopers.isNotEmpty
                     ? _selectedDevelopers.first
                     : null,
-                decoration: InputDecoration(labelText: 'Select Developers'),
-                items: developerModel.getDevelopers().map((developer) {
+                decoration:
+                    const InputDecoration(labelText: 'Select Developers'),
+                items: developerModel.developers.map((developer) {
                   return DropdownMenuItem<User>(
                     value: developer,
                     child: Text(developer.nomUtilisateur),

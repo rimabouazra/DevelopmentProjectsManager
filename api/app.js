@@ -2,6 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const jwt =require('jsonwebtoken');
 const { mongoose } = require('./db/mongoose');
+const bcrypt = require('bcryptjs');
+
 
 const { Project } = require('./db/models/project.model');
 const { Task } = require('./db/models/task.model');
@@ -11,14 +13,12 @@ const app = express();
 app.use(bodyParser.json());
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "GET,POST,OPTIONS,PUT,PATCH,DELETE");
+    res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, x-access-token, x-refresh-token, _id");
-    res.header(
-        'Access-Control-Expose-Headers',
-        'x-access-token, x-refresh-token'
-    );
+    res.header('Access-Control-Expose-Headers', 'x-access-token, x-refresh-token');
     next();
 });
+
 
 let authenticate = (req, res, next) => {
     let token = req.header('x-access-token');
@@ -37,7 +37,7 @@ let authenticate = (req, res, next) => {
   
 
 
-// Verify Refresh Token Middleware (verifythe session)
+// Verify Refresh Token Middleware (verify the session)
 let verifySession = (req, res, next) => {
     // grab the refresh token and _id from the request header
     let refreshToken = req.header('x-refresh-token');
@@ -247,7 +247,9 @@ app.get('/projects/:projectId/tasks',authenticate, (req, res) => {
   
 app.post('/users/login', (req, res) => {
     const { email, password } = req.body;
-
+    if (!email || !password) {
+        return res.status(400).json({ error: 'Email and password are required' });
+    }
     User.findByCredentials(email, password).then((user) => {
         return user.createSession().then((refreshToken) => {
             return user.generateAccessAuthToken().then((accessToken) => {
@@ -256,14 +258,45 @@ app.post('/users/login', (req, res) => {
         }).then((authTokens) => {
             res.header('x-refresh-token', authTokens.refreshToken);
             res.header('x-access-token', authTokens.accessToken);
-            res.send(user);
+            res.json(user);
         });
     }).catch((err) => {
-        res.status(400).send(err);
+        res.status(400).json({ error: err.message || 'Invalid login credentials' });
     });
 });
 
+
+// Sign Up
+app.post("/users/signup", async (req, res) => {
+    try {
+      const { name, email, password , role} = req.body;
+      if (!name || !email || !password || role === undefined) {
+        return res.status(400).json({ msg: 'All fields including role are required' });
+      }
   
+      const existingUser = await User.findOne({ email });
+      if (existingUser) {
+        return res
+          .status(400)
+          .json({ msg: "User with same email already exists!" });
+      }
+  
+      const hashedPassword = await bcrypt.hash(password, 8);
+  
+      let user = new User({
+        email,
+        password: hashedPassword,
+        name,
+        role
+      });
+      user = await user.save();
+      res.json(user);
+    } catch (e) {
+      res.status(500).json({ error: e.message });
+    }
+  });
+  
+
 app.get('/users/me/access-token', verifySession, (req, res) => {
     req.userObject.generateAccessAuthToken().then((accessToken) => {
         res.header('x-access-token', accessToken).send({ accessToken });
@@ -272,8 +305,12 @@ app.get('/users/me/access-token', verifySession, (req, res) => {
     });
 });
 
+app.get("/", authenticate, async (req, res) => {
+    const user = await User.findById(req.user);
+    res.json({ ...user._doc, token: req.token });
+  });
   
-  let deleteTasksFromList = (projectId) => {
+let deleteTasksFromList = (projectId) => {
     Task.deleteMany({
         projectId
     }).then(() => {
@@ -281,6 +318,11 @@ app.get('/users/me/access-token', verifySession, (req, res) => {
     })
 }
 
+app.get('/developers', (req, res) => {
+    User.findDevelopers()
+      .then(developers => res.send(developers))
+      .catch(err => res.status(500).send(err));
+  });
   
 
 app.listen(3000, () => {

@@ -7,12 +7,25 @@ const bcrypt = require('bcryptjs');
 const jwtSecret = "42078558166243957505uefkfjza8474524076";
 
 const UserSchema = new mongoose.Schema({
+  name: {
+    required: true,
+    type: String,
+    trim: true,
+  },
   email: {
     type: String,
     required: true,
     minlength: 1,
     trim: true,
-    unique: true
+    unique: true,
+    validate: {
+      validator: (value) => {
+        const re =
+          /^(([^<>()[\]\.,;:\s@\"]+(\.[^<>()[\]\.,;:\s@\"]+)*)|(\".+\"))@(([^<>()[\]\.,;:\s@\"]+\.)+[^<>()[\]\.,;:\s@\"]{2,})$/i;
+        return value.match(re);
+      },
+      message: "Please enter a valid email address",
+    },
   },
   password: {
     type: String,
@@ -21,7 +34,7 @@ const UserSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    enum: ['developer', 'project_manager', 'administrator'], 
+    //enum: ['developer', 'project_manager', 'administrator'], 
     required: true 
   },
   sessions: [{
@@ -146,6 +159,10 @@ let saveSessionToDatabase = (user, refreshToken) => {
     });
   });
 }
+
+UserSchema.statics.findDevelopers = function() {
+  return this.find({ role: 'developer' }).select('name email role');
+};
 
 let generateRefreshTokenExpiryTime = () => {
   let daysUntilExpire = 10;

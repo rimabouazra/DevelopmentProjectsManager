@@ -14,49 +14,20 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   String errorMessage = '';
+  final AuthHelper authHelper = AuthHelper();
 
 
   void login() async {
-    final String email = emailController.text;
-    final String password = passwordController.text;
-
-    try {
-      final response = await http.post(
-        Uri.parse('http://localhost:3000/users/login'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(<String, String>{
-          'email': email,
-          'password': password,
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        // ignore: unused_local_variable
-        final Map<String, dynamic> data = json.decode(response.body);
-        final SharedPreferences prefs = await SharedPreferences.getInstance();
-
-        await AuthHelper.saveTokens(
-          response.headers['x-access-token']!,
-          response.headers['x-refresh-token']!,
-        );
-
-        Navigator.pushReplacementNamed(context, 'ListProjects');
-      } else {
-        setState(() {
-          errorMessage = 'Login failed. Status: ${response.statusCode}';
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = 'Login failed. Error: $e';
-      });
-    }
+  
+    authHelper.LogInUser(
+      context: context,
+      email: emailController.text,
+      password: passwordController.text,
+    );
   }
 
   // Simulated authentication function
-  User? authenticateUser(String email, String password) {
+  /*User? authenticateUser(String email, String password) {
     List<User> users = [
       User(
         idUtilisateur: '1',
@@ -87,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
       }
     }
     return null;
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {

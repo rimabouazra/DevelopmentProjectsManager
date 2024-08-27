@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/model/auth_helper.dart';
 import 'package:frontend/widget/ListProjectWidget.dart';
 import 'package:frontend/widget/ListTaskWidget.dart';
 
@@ -12,10 +13,13 @@ class ListTasksView extends StatefulWidget {
 }
 
 class _ListTasksViewState extends State<ListTasksView> {
+   void signOutUser(BuildContext context) {
+    AuthHelper().signOut(context);
+  }
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           centerTitle: true,
@@ -41,8 +45,24 @@ class _ListTasksViewState extends State<ListTasksView> {
           children: [
             ListProjectsWidget(),
             ListTasksWidget(
-              projectId: widget.projectId,  // Pass the projectId to ListTasksWidget
+              projectId: widget.projectId,
             ),
+             ElevatedButton(
+            onPressed: () => signOutUser(context),
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.all(Colors.blue),
+              textStyle: WidgetStateProperty.all(
+                const TextStyle(color: Colors.white),
+              ),
+              minimumSize: WidgetStateProperty.all(
+                Size(MediaQuery.of(context).size.width / 2.5, 50),
+              ),
+            ),
+            child: const Text(
+              "Sign Out",
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ),
           ],
         ),
       ),

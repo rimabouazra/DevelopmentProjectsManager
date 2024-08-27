@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/model/auth_helper.dart';
 import 'package:frontend/view/ProjectTasksView.dart';
