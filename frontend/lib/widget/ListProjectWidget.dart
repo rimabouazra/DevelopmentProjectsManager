@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:frontend/model/auth_helper.dart';
 import 'package:frontend/view/ProjectTasksView.dart';
@@ -10,7 +12,7 @@ class ListProjectsWidget extends StatefulWidget {
 
 class ListProjectsWidgetState extends State<ListProjectsWidget> {
   List<dynamic> _projects = [];
-   String errorMessage = '';
+  String errorMessage = '';
 
   @override
   void initState() {
@@ -19,31 +21,32 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
   }
 
   Future<void> fetchProjects() async {
-  final tokens = await AuthHelper.getTokens();
-  try {
-    final response = await http.get(
-      Uri.parse('http://localhost:3000/projects'),
-      headers: <String, String>{
-        'Content-Type': 'application/json; charset=UTF-8',
-        'x-access-token': tokens['accessToken']!,
-      },
-    );
+    final tokens = await AuthHelper.getTokens();
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/projects'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+          'x-access-token': tokens['accessToken']!,
+        },
+      );
 
-    if (response.statusCode == 200) {
-      // Handle the successful response
-    } else {
-      // Handle errors
+      if (response.statusCode == 200) {
+        setState(() {
+          _projects = json.decode(response.body);
+        });
+      } else {
+        setState(() {
+          errorMessage =
+              'Failed to fetch projects. Status: ${response.statusCode}';
+        });
+      }
+    } catch (e) {
       setState(() {
-        errorMessage = 'Failed to fetch projects. Status: ${response.statusCode}';
+        errorMessage = 'Failed to fetch projects. Error: $e';
       });
     }
-  } catch (e) {
-    setState(() {
-      errorMessage = 'Failed to fetch projects. Error: $e';
-    });
   }
-}
-
 
   @override
   Widget build(BuildContext context) {
@@ -64,9 +67,11 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
                     context,
                     MaterialPageRoute(
                       builder: (context) => Scaffold(
-                        appBar: AppBar(title: Text("${project['title']} Tasks")),
+                        appBar:
+                            AppBar(title: Text("${project['title']} Tasks")),
                         body: ProjectTasksView(
-                          projectId: project['projectId'],  // Pass the projectId to the ProjectTasksView
+                          projectId: project[
+                              'projectId'], // Pass the projectId to the ProjectTasksView
                         ),
                       ),
                     ),

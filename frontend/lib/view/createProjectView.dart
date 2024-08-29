@@ -22,7 +22,15 @@ class _CreateProjectViewState extends State<CreateProjectView> {
   @override
   void initState() {
     super.initState();
-    Provider.of<DeveloperModel>(context, listen: false).fetchDevelopers();
+    _fetchDevelopers();
+  }
+    Future<void> _fetchDevelopers() async {
+    try {
+      await Provider.of<DeveloperModel>(context, listen: false).fetchDevelopers();
+      setState(() {});
+    } catch (e) {
+      print('Failed to fetch developers: $e');
+    }
   }
 
   @override

@@ -13,17 +13,18 @@ class User  extends ChangeNotifier {
    String idUtilisateur;
    String nomUtilisateur;
    String email;
-   final String token;
-   String motDePasse;
+   String? token;
+   String? motDePasse;
    Role role;
-  User? currentUser;
+   User? currentUser;
+  
 
   User({
     required this.idUtilisateur,
     required this.nomUtilisateur,
     required this.email,
-    required this.token,
-    required this.motDePasse,
+    this.token,
+    this.motDePasse,
     required this.role,
   });
 
@@ -37,7 +38,21 @@ class User  extends ChangeNotifier {
     };
   }
 
-  bool canCreateProject() {
+  factory User.fromJson(Map<String, dynamic> json) {
+    return User(
+      idUtilisateur: json['_id']?? '' ,
+      nomUtilisateur: json['name']?? '',
+      email: json['email'] ?? '',
+      motDePasse: json['password']?? '',
+      role: Role.values[json['role'] ?? 0],
+      token: json['token'],
+    );
+  }
+
+  String toJson() => json.encode(toMap());
+
+  //permissions 
+    bool canCreateProject() {
     return role == Role.Manager;
   }
 
@@ -48,17 +63,4 @@ class User  extends ChangeNotifier {
   bool canModifyProject() {
     return role == Role.Manager || role == Role.Administrator;
   }
-
-  factory User.fromJson(Map<String, dynamic> json) {
-    return User(
-      idUtilisateur: json['_Id'],
-      nomUtilisateur: json['name'],
-      email: json['email'],
-      token: json['token'] ?? '',
-      motDePasse: json['password'],
-      role: Role.values[json['role']],
-    );
-  }
-
-  String toJson() => json.encode(toMap());
 }

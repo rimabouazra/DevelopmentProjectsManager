@@ -67,7 +67,7 @@ UserSchema.methods.generateAccessAuthToken = function() {
         if (!err) {
           resolve(token);
         } else {
-          reject(err); // Pass error object to reject
+          reject(err);
         }
       }
     );
@@ -109,20 +109,25 @@ UserSchema.statics.findByIdAndToken = function(_id, token) {
   });
 }
 
-UserSchema.statics.findByCredentials = function(email, password) {
+UserSchema.statics.findByCredentials = function (email, password) {
   let User = this;
   return User.findOne({ email }).then((user) => {
-    if (!user) {
-      return Promise.reject('Invalid login credentials.');
-    }
-    return bcrypt.compare(password, user.password).then((isMatch) => {
-      if (!isMatch) {
-        return Promise.reject('Invalid login credentials.');
-      }
-      return user;
-    });
+      if (!user) return Promise.reject({ msg: 'Login failed! Check authentication credentials' });
+
+      return new Promise((resolve, reject) => {
+          bcrypt.compare(password, user.password, (err, res) => {
+              if (res) {
+                console.log("Password matches!");
+                resolve(user);
+              } else {
+                console.log("Password does not match!");
+                reject({ msg: 'Invalid credentials' });
+              }
+          });
+      });
   });
-}
+};
+
 
 UserSchema.statics.hasRefreshTokenExpired = (expiresAt) => {
   let secondsSinceEpoch = Date.now() / 1000;
@@ -130,13 +135,13 @@ UserSchema.statics.hasRefreshTokenExpired = (expiresAt) => {
 }
 
 // Middleware
-UserSchema.pre('save', function(next) {
+UserSchema.pre('save', function (next) {
   let user = this;
-  let costFactor = 10;
 
   if (user.isModified('password')) {
-    bcrypt.genSalt(costFactor, (err, salt) => {
+    bcrypt.genSalt(10, (err, salt) => {
       bcrypt.hash(user.password, salt, (err, hash) => {
+        if (err) return next(err);
         user.password = hash;
         next();
       });
@@ -145,6 +150,7 @@ UserSchema.pre('save', function(next) {
     next();
   }
 });
+
 
 // Helper methods
 let saveSessionToDatabase = (user, refreshToken) => {

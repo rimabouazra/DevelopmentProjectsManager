@@ -2,8 +2,6 @@ import 'dart:convert';
 import 'package:frontend/model/auth_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
-import 'package:frontend/model/User.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   @override
@@ -26,71 +24,51 @@ class _LoginPageState extends State<LoginPage> {
     );
   }
 
-  // Simulated authentication function
-  /*User? authenticateUser(String email, String password) {
-    List<User> users = [
-      User(
-        idUtilisateur: '1',
-        nomUtilisateur: 'John Doe',
-        email: 'developer@example.com',
-        motDePasse: 'password123',
-        role: Role.Developer,
-      ),
-      User(
-        idUtilisateur: '2',
-        nomUtilisateur: 'Jane Smith',
-        email: 'manager@example.com',
-        motDePasse: 'password123',
-        role: Role.Manager,
-      ),
-      User(
-        idUtilisateur: '3',
-        nomUtilisateur: 'Admin User',
-        email: 'admin@example.com',
-        motDePasse: 'password123',
-        role: Role.Administrator,
-      ),
-    ];
-
-    for (var user in users) {
-      if (user.email == email && user.motDePasse == password) {
-        return user;
-      }
-    }
-    return null;
-  }*/
-
-  @override
+  
+   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            TextField(
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text(
+            "Login",
+            style: TextStyle(fontSize: 30),
+          ),
+          SizedBox(height: MediaQuery.of(context).size.height * 0.08),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            child: TextField(
               controller: emailController,
-              decoration: InputDecoration(labelText: 'Email'),
-              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(labelText: 'Enter your email'),
             ),
-            TextField(
+          ),
+          const SizedBox(height: 20),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 20),
+            child: TextField(
               controller: passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
-              obscureText: true,
+              decoration: const InputDecoration(labelText: 'Enter your Password'),
             ),
-            SizedBox(height: 20),
-            ElevatedButton(onPressed: login, child: Text('Login')),
-            if (errorMessage.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Text(
-                  errorMessage,
-                  style: TextStyle(color: Colors.red),
-                ),
+          ),
+          const SizedBox(height: 40),
+          ElevatedButton(
+            onPressed: login,
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.all(Colors.blue),
+              textStyle: WidgetStateProperty.all(
+                const TextStyle(color: Colors.white),
               ),
-          ],
-        ),
+              minimumSize: WidgetStateProperty.all(
+                Size(MediaQuery.of(context).size.width / 2.5, 50),
+              ),
+            ),
+            child: const Text(
+              "Login",
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ),
+        ],
       ),
     );
   }

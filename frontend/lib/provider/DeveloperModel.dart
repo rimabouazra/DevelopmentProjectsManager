@@ -22,7 +22,7 @@ class DeveloperModel extends ChangeNotifier {
   List<User> get developers => _developers;
 
   void setUser(String userJson) {
-  final Map<String, dynamic> userMap = json.decode(userJson);
+  var userMap = json.decode(userJson);
   _user = User.fromJson(userMap);
   notifyListeners();
 }
@@ -33,14 +33,18 @@ class DeveloperModel extends ChangeNotifier {
   }
 
   Future<void> fetchDevelopers() async {
-    final response = await http.get(Uri.parse('http://localhost:3000/developers'));
+  final response = await http.get(Uri.parse('http://localhost:3000/developers'));
 
-    if (response.statusCode == 200) {
-      final List<dynamic> data = json.decode(response.body);
-      _developers = data.map((json) => User.fromJson(json)).toList();
-      notifyListeners();
-    } else {
-      throw Exception('Failed to load developers');
-    }
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body) as List<dynamic>;
+    _developers = data
+        .map((json) => User.fromJson(json))
+        .where((user) => user.role == Role.Developer)
+        .toList();
+    notifyListeners();
+  } else {
+    throw Exception('Failed to load developers');
   }
+}
+
 }

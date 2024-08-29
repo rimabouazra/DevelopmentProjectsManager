@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:frontend/model/User.dart';
 import 'package:frontend/provider/DeveloperModel.dart';
+import 'package:frontend/view/ListTasksView.dart';
 import 'package:frontend/view/signUpPage.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,7 +24,7 @@ void httpErrorHandle({
   required VoidCallback onSuccess,
 }) {
   try {
-    final Map<String, dynamic> responseData = jsonDecode(response.body);
+    final Map<String, dynamic> responseData =  response.body.isNotEmpty ? jsonDecode(response.body) : {};
 
     switch (response.statusCode) {
       case 200:
@@ -60,7 +61,7 @@ void httpErrorHandle({
       );
 
       http.Response res = await http.post(
-        Uri.parse('http://localhost:3000/users/signup'),
+        Uri.parse('http://localhost:3000/users'),
         body: user.toJson(),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
@@ -70,11 +71,21 @@ void httpErrorHandle({
       httpErrorHandle(
         response: res,
         context: context,
-        onSuccess: () {
+        onSuccess: () async {
           showSnackBar(
             context,
             'Account created! Login with the same credentials!',
           );
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+      //var responseBody = jsonDecode(res.body);
+
+      // Save tokens in shared preferences
+      String? refreshToken = res.headers['x-refresh-token'];
+      String? accessToken = res.headers['x-access-token'];
+
+      await prefs.setString('x-refresh-token', refreshToken!);
+      await prefs.setString('x-access-token', accessToken!);
+
         },
       );
     } catch (e) {
@@ -82,12 +93,13 @@ void httpErrorHandle({
     }
   }
 
-  void LogInUser({
+void LogInUser({
   required BuildContext context,
   required String email,
   required String password,
 }) async {
   try {
+    print("Attempting to log in with email: $email and password: $password"); // Debugging line
     var userProvider = Provider.of<DeveloperModel>(context, listen: false);
     final navigator = Navigator.of(context);
     http.Response res = await http.post(
@@ -100,36 +112,32 @@ void httpErrorHandle({
         'Content-Type': 'application/json; charset=UTF-8',
       },
     );
+    print("Server response: ${res.statusCode} ${res.body}"); // Debugging line
 
     httpErrorHandle(
       response: res,
       context: context,
       onSuccess: () async {
         SharedPreferences prefs = await SharedPreferences.getInstance();
+        //final responseData = jsonDecode(res.body);
+        userProvider.setUser(res.body);
+        //await prefs.setString('x-access-token', responseData['token']);
+        await prefs.setString('x-refresh-token', res.headers['x-refresh-token'] ?? '');
+        await prefs.setString('x-access-token', res.headers['x-access-token'] ?? '');
 
-        // Safely parse JSON response
-        final Map<String, dynamic> data = jsonDecode(res.body);
-        final String? token = data['token'];
-        
-        if (token != null) {
-          userProvider.setUser(res.body);
-          await prefs.setString('x-access-token', token);
-          navigator.pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => SignupPage(),
-            ),
-            (route) => false,
-          );
-        } else {
-          showSnackBar(context, 'Token not received');
-        }
+        navigator.pushAndRemoveUntil(
+          MaterialPageRoute(
+            builder: (context) => ListTasksView(),
+          ),
+          (route) => false,
+        );
       },
     );
   } catch (e) {
-    showSnackBar(context, 'An error occurred: ${e.toString()}');
-    print('Login error: ${e.toString()}');
+    showSnackBar(context, e.toString());
   }
 }
+
 
 
   void signOut(BuildContext context) async {
@@ -167,4 +175,6 @@ void httpErrorHandle({
     await prefs.remove('accessToken');
     await prefs.remove('refreshToken');
   }
+
+  
 }

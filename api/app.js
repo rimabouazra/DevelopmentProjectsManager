@@ -217,7 +217,7 @@ app.get('/projects/:projectId/tasks',authenticate, (req, res) => {
 
   //USER ROUTES
 
-  app.post('/users', (req, res) => {
+ app.post('/users', (req, res) => {
     // User sign up
 
     let body = req.body;
@@ -244,58 +244,83 @@ app.get('/projects/:projectId/tasks',authenticate, (req, res) => {
     })
 })
 
-  
-app.post('/users/login', (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-        return res.status(400).json({ error: 'Email and password are required' });
-    }
-    User.findByCredentials(email, password).then((user) => {
-        return user.createSession().then((refreshToken) => {
-            return user.generateAccessAuthToken().then((accessToken) => {
-                return { refreshToken, accessToken };
-            });
-        }).then((authTokens) => {
-            res.header('x-refresh-token', authTokens.refreshToken);
-            res.header('x-access-token', authTokens.accessToken);
-            res.json(user);
+ 
+app.post("/users/login", async (req, res) => {
+    try {
+        const { email, password } = req.body;
+    
+        const user = await User.findOne({ email });
+        if (!user) {
+          return res
+            .status(400)
+            .json({ msg: "User with this email does not exist!" });
+        }
+    
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+          return res.status(400).json({ msg: "Incorrect password." });
+        }
+    
+        const refreshToken = await user.createSession();
+        const accessToken = await user.generateAccessAuthToken();
+        res
+        .header('x-refresh-token', refreshToken)
+        .header('x-access-token', accessToken)
+        .json({
+            token: accessToken,
+            user: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                role: user.role,
+                sessions: user.sessions,
+            },
         });
-    }).catch((err) => {
-        res.status(400).json({ error: err.message || 'Invalid login credentials' });
-    });
+
+      } catch (e) {
+        res.status(500).json({ error: e.message });
+      }
 });
+
 
 
 // Sign Up
 app.post("/users/signup", async (req, res) => {
     try {
-      const { name, email, password , role} = req.body;
-      if (!name || !email || !password || role === undefined) {
-        return res.status(400).json({ msg: 'All fields including role are required' });
-      }
-  
-      const existingUser = await User.findOne({ email });
-      if (existingUser) {
-        return res
-          .status(400)
-          .json({ msg: "User with same email already exists!" });
-      }
-  
-      const hashedPassword = await bcrypt.hash(password, 8);
-  
-      let user = new User({
-        email,
-        password: hashedPassword,
-        name,
-        role
-      });
-      user = await user.save();
-      res.json(user);
+        const { name, email, password, role } = req.body;
+        if (!name || !email || !password || role === undefined) {
+            return res.status(400).json({ msg: 'All fields including role are required' });
+        }
+
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res
+                .status(400)
+                .json({ msg: "User with the same email already exists!" });
+        }
+
+        const hashedPassword = await bcrypt.hash(password, 8);
+
+        let user = new User({
+            email,
+            password: hashedPassword,
+            name,
+            role
+        });
+        user = await user.save();
+
+        const refreshToken = await user.createSession();
+        const accessToken = await user.generateAccessAuthToken();
+
+        res
+            .header('x-refresh-token', refreshToken)
+            .header('x-access-token', accessToken)
+            .json(user);
     } catch (e) {
-      res.status(500).json({ error: e.message });
+        res.status(500).json({ error: e.message });
     }
-  });
-  
+});
+
 
 app.get('/users/me/access-token', verifySession, (req, res) => {
     req.userObject.generateAccessAuthToken().then((accessToken) => {

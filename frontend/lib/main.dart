@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
               task: ModalRoute.of(context)!.settings.arguments as Task,
             ),
       },
-      home: Provider.of<DeveloperModel>(context).user.token.isEmpty ? const SignupPage() : ListProjectsWidget(),
+      home: Provider.of<DeveloperModel>(context).user.token!.isEmpty ? const SignupPage() : ListProjectsWidget(),
     );
   }
 }
