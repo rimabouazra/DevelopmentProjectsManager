@@ -72,8 +72,12 @@ class TaskModel extends ChangeNotifier {
     }
   }
 
-  void markAsDone(String key, int index) {
-    tasks[key]![index].status = true;
+  void markAsDone(String projectId, int taskIndex) {
+     if (tasks.containsKey(projectId)) {
+      final task = tasks[projectId]![taskIndex];
+      task.status = true;
+      updateTask(task);
+    }
     notifyListeners();
   }
 
@@ -103,5 +107,20 @@ class TaskModel extends ChangeNotifier {
     }
     tasksByProject[projectId]!.add(task);
     notifyListeners();
+  }
+
+  void updateTask(Task updatedTask) {
+    final projectId = updatedTask.projectId;
+
+    if (tasks.containsKey(projectId)) {
+      final taskIndex = tasks[projectId]!
+          .indexWhere((task) => task.id == updatedTask.id);
+
+      if (taskIndex != -1) {
+        // Replace the old task with the updated task
+        tasks[projectId]![taskIndex] = updatedTask;
+        notifyListeners();
+      }
+    }
   }
 }

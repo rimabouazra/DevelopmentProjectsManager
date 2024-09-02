@@ -30,6 +30,7 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
           'x-access-token': tokens['accessToken']!,
         },
       );
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
         setState(() {
@@ -42,11 +43,13 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
         });
       }
     } catch (e) {
+    if (mounted) {
       setState(() {
         errorMessage = 'Failed to fetch projects. Error: $e';
       });
     }
   }
+}
 
   @override
   Widget build(BuildContext context) {

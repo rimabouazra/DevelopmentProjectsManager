@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/model/Task.dart';
+import 'package:frontend/model/User.dart';
 import 'package:frontend/provider/DeveloperModel.dart';
 import 'package:frontend/provider/ProjectModel.dart';
 import 'package:frontend/provider/TaskModel.dart';
@@ -19,6 +20,12 @@ void main() {
         ChangeNotifierProvider(create: (_) => ProjectModel()),
         ChangeNotifierProvider(create: (_) => DeveloperModel()),
         ChangeNotifierProvider(create: (context) => ProjectModel()),
+        ChangeNotifierProvider(create: (_) => User(
+          idUtilisateur: '', //a default value
+            nomUtilisateur: '',
+            email: '',
+            role: Role.Developer,
+        )),
       ],
       child: const MyApp(),
     ),
@@ -45,7 +52,12 @@ class MyApp extends StatelessWidget {
               task: ModalRoute.of(context)!.settings.arguments as Task,
             ),
       },
-      home: Provider.of<DeveloperModel>(context).user.token!.isEmpty ? const SignupPage() : ListProjectsWidget(),
+      home: Builder(
+        builder: (context) {
+          final developerModel = Provider.of<DeveloperModel>(context, listen: true);
+          return developerModel.user.token!.isEmpty ? const SignupPage() : ListProjectsWidget();
+        },
+      ),
     );
   }
 }

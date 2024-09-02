@@ -98,8 +98,15 @@ UserSchema.methods.createSession = function() {
   });
 }
 
+UserSchema.methods.canCreateProject = function () {
+  return this.role === 'manager' || this.role === 'administrator';
+};
+
+
 // Static methods
-UserSchema.statics.getJWTSecret = () => jwtSecret;
+UserSchema.statics.getJWTSecret = () =>  {
+  return jwtSecret;
+};
 
 UserSchema.statics.findByIdAndToken = function(_id, token) {
   const User = this;
@@ -156,7 +163,7 @@ UserSchema.pre('save', function (next) {
 let saveSessionToDatabase = (user, refreshToken) => {
   return new Promise((resolve, reject) => {
     let expireAt = generateRefreshTokenExpiryTime();
-    user.sessions.push({ token: refreshToken, expireAt });
+    user.sessions.push({ 'token': refreshToken, expireAt });
 
     user.save().then(() => {
       return resolve(refreshToken);

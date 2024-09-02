@@ -42,6 +42,14 @@ class _SubtasksViewState extends State<SubtasksView> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.task.title),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.add),
+            onPressed: () {
+              Navigator.pushNamed(context, 'addSubtask', arguments: widget.task);
+            },
+          ),
+        ],
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),

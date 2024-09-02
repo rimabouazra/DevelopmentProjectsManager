@@ -24,9 +24,11 @@ class _CreateProjectViewState extends State<CreateProjectView> {
     super.initState();
     _fetchDevelopers();
   }
-    Future<void> _fetchDevelopers() async {
+
+  Future<void> _fetchDevelopers() async {
     try {
-      await Provider.of<DeveloperModel>(context, listen: false).fetchDevelopers();
+      await Provider.of<DeveloperModel>(context, listen: false)
+          .fetchDevelopers();
       setState(() {});
     } catch (e) {
       print('Failed to fetch developers: $e');
@@ -60,32 +62,34 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                 controller: _descriptionController,
                 decoration: InputDecoration(labelText: 'Description'),
               ),
-              DropdownButtonFormField<User>(
-                value: _selectedDevelopers.isNotEmpty
-                    ? _selectedDevelopers.first
-                    : null,
-                decoration:
-                    const InputDecoration(labelText: 'Select Developers'),
-                items: developerModel.developers.map((developer) {
-                  return DropdownMenuItem<User>(
-                    value: developer,
-                    child: Text(developer.nomUtilisateur),
-                  );
-                }).toList(),
-                onChanged: (value) {
-                  setState(() {
-                    if (value != null && !_selectedDevelopers.contains(value)) {
-                      _selectedDevelopers.add(value);
-                    }
-                  });
-                },
-                validator: (value) {
-                  if (_selectedDevelopers.isEmpty) {
-                    return 'Please select at least one developer';
-                  }
-                  return null;
-                },
+              SizedBox(height: 16.0),
+              Expanded(
+                child: ListView(
+                  children: developerModel.developers.map((developer) {
+                    return CheckboxListTile(
+                      title: Text(developer.nomUtilisateur),
+                      value: _selectedDevelopers.contains(developer),
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            _selectedDevelopers.add(developer);
+                          } else {
+                            _selectedDevelopers.remove(developer);
+                          }
+                        });
+                      },
+                    );
+                  }).toList(),
+                ),
               ),
+              if (_selectedDevelopers.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 16.0),
+                  child: Text(
+                    'Please select at least one developer',
+                    style: TextStyle(color: Colors.red),
+                  ),
+                ),
               SizedBox(height: 16.0),
               ElevatedButton(
                 onPressed: () {
@@ -99,15 +103,25 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                       _selectedDevelopers,
                     );
                     final currentUser =
-                        Provider.of<User>(context, listen: false).currentUser;
-                    try {
-                      Provider.of<ProjectModel>(context, listen: false)
-                          .addProject(newProject, currentUser!);
-                      Navigator.pop(context);
-                    } catch (e) {
-                      // Handle the exception if the user does not have permission
+                        Provider.of<User>(context, listen: false);
+
+                    if (currentUser.canCreateProject()) {
+                      try {
+                        Provider.of<ProjectModel>(context, listen: false)
+                            .addProject(newProject, currentUser!);
+                        Navigator.pop(context);
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                              content: Text(
+                                  'Failed to create project: ${e.toString()}')),
+                        );
+                      }
+                    } else {
                       ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(content: Text(e.toString())),
+                        SnackBar(
+                            content: Text(
+                                'User does not have permission to create projects')),
                       );
                     }
                   }

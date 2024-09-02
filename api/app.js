@@ -23,8 +23,10 @@ app.use((req, res, next) => {
 let authenticate = (req, res, next) => {
     let token = req.header('x-access-token');
     console.log('Token received:', token);
-  
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    if (!token) {
+        return res.status(401).send({ message: 'No token provided.' });
+    }
+    jwt.verify(token,  User.getJWTSecret(), (err, decoded) => {
       if (err) {
         console.error('Token verification failed:', err);
         return res.status(401).send({ message: 'Unauthorized access' });
@@ -82,27 +84,33 @@ let verifySession = (req, res, next) => {
 
 app.get('/projects', authenticate, async (req, res) => {
     //get all the projects belonging to the authentificated user
-    Project.find({
-       _userId: req.user_id
-    }).then((projects)=>{
+    try {
+        let projects = await Project.find({ _userId: req.user_id });
         res.send(projects);
-    }).catch((e)=>{
-        res.send(e);
-    });
+    } catch (e) {
+        res.status(500).send(e);
+    }
 
   });
   
   app.post('/projects',authenticate, async (req, res) => {
     //create a new project and return it to the user
-    let title = req.body.title;
+    try {
+        let user = await User.findById(req.user_id);
+        if (!user || !user.canCreateProject()) {
+            return res.status(403).send({ message: 'User does not have the permission to create projects' });
+        }
 
-    let newProject = new Project({
-        title,
-        _userId: req.user_id
-    });
-    newProject.save().then((ProjectDoc) => {
-        res.send(ProjectDoc);
-    })
+        let newProject = new Project({
+            title: req.body.title,
+            _userId: req.user_id
+        });
+
+        let projectDoc = await newProject.save();
+        res.send(projectDoc);
+    } catch (e) {
+        res.status(500).send(e);
+    }
   });
 
   app.patch('/projects/:id',authenticate,(req,res)=>{
@@ -217,10 +225,13 @@ app.get('/projects/:projectId/tasks',authenticate, (req, res) => {
 
   //USER ROUTES
 
- app.post('/users', (req, res) => {
+ app.post('/users', async(req, res) => {
     // User sign up
 
     let body = req.body;
+    if (!body.email || !body.password || !body.name || !body.role) {
+        return res.status(400).send({ msg: 'All fields are required' });
+    }
     let newUser = new User(body);
 
     newUser.save().then(() => {
@@ -255,6 +266,10 @@ app.post("/users/login", async (req, res) => {
             .status(400)
             .json({ msg: "User with this email does not exist!" });
         }
+
+         // Debugging: Log the entered password and the stored hashed password
+         console.log("Entered Password:", password);
+         console.log("Stored Hashed Password:", user.password);
     
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {
@@ -340,7 +355,9 @@ let deleteTasksFromList = (projectId) => {
         projectId
     }).then(() => {
         console.log("Tasks from " + projectId + " were deleted!");
-    })
+    }).catch((e) => {
+        console.error("Error deleting tasks from project " + projectId, e);
+    });
 }
 
 app.get('/developers', (req, res) => {
@@ -351,5 +368,5 @@ app.get('/developers', (req, res) => {
   
 
 app.listen(3000, () => {
-    console.log(`Server is running on port 3000!`);
+    console.log("Server is running on port 3000!");
   });
