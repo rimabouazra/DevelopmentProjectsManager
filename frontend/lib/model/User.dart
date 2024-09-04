@@ -32,14 +32,15 @@ class User extends ChangeNotifier {
       'email': email,
       'token': token,
       'password': motDePasse,
-      'role': role.toString().split('.').last,
+      'role': role.toString().split('.').last.toLowerCase(),
     };
   }
 
   factory User.fromJson(Map<String, dynamic> json) {
     Role role;
+    String roleString = json['role'].toString().toLowerCase();
 
-    if (json['role'] is String) {
+    /*if (json['role'] is String) {
       role = Role.values.firstWhere(
         (r) =>
             r.toString().split('.').last.toLowerCase() ==
@@ -49,19 +50,39 @@ class User extends ChangeNotifier {
     } else {
       int roleIndex = json['role'] ?? 0;
       role = Role.values[roleIndex.clamp(0, Role.values.length - 1)];
-    }
+    }*/
+    switch (roleString) {
+    case 'manager':
+      role = Role.Manager;
+      break;
+    case 'administrator':
+      role = Role.Administrator;
+      break;
+    case 'developer':
+      role = Role.Developer;
+      break;
+    default:
+      print("Unknown role: $roleString, defaulting to Developer");
+      role = Role.Developer;
+      break;
+  }
+  print("Role parsed from JSON: $roleString, Mapped to: $role");
 
-    return User(
-      idUtilisateur: json['_id'] ?? '',
-      nomUtilisateur: json['name'] ?? '',
-      email: json['email'] ?? '',
-      motDePasse: json['password'] ?? '',
-      role: role,
-      token: json['token'],
-    );
+  return User(
+    idUtilisateur: json['_id'] ?? '',
+    nomUtilisateur: json['name'] ?? '',
+    email: json['email'] ?? '',
+    motDePasse: json['password'] ?? '',
+    role: role,
+    token: json['token'],
+  );
   }
 
-  String toJson() => json.encode(toMap());
+  Map<String, dynamic> toJson() {
+    return toMap();
+  }
+
+  String toJsonString() => json.encode(toMap());
 
   //permissions
   bool canCreateProject() {

@@ -19,4 +19,13 @@ class Project {
       (json['developers'] as List<dynamic>).map((userJson) => User.fromJson(userJson)).toList(),
     );
   }
+   Map<String, dynamic> toJson() {
+    return {
+      'projectId': projectId,
+      'title': title,
+      'description': description,
+      'tasks': tasks.map((task) => task.toJson()).toList(),
+      'developers': developers.map((developer) => developer.toJson()).toList(),
+    };
+  }
 }

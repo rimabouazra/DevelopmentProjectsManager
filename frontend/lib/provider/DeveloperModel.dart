@@ -23,8 +23,21 @@ class DeveloperModel extends ChangeNotifier {
 
   void setUser(String userJson) {
   var userMap = json.decode(userJson);
-  _user = User.fromJson(userMap);
-  notifyListeners();
+  print("Full JSON from backend: $userMap");
+  if (userMap.containsKey('user')) {
+    var userSubMap = userMap['user']; // Extract the 'user' object from the JSON
+
+    // Extract the role
+    String? roleString = userSubMap['role']?.toString().toLowerCase();
+
+    print("Raw role string from backend: $roleString");  // Debugging line
+
+    _user = User.fromJson(userSubMap);
+    print("User role set in setUser method: ${_user.role}");  // Debugging line
+    notifyListeners();
+  } else {
+    print("No 'user' key found in JSON response");
+  }
 }
 
   void setUserFromModel(User user) {

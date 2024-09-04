@@ -12,6 +12,7 @@ class ListProjectsWidget extends StatefulWidget {
 
 class ListProjectsWidgetState extends State<ListProjectsWidget> {
   List<dynamic> _projects = [];
+  bool isLoading = true;
   String errorMessage = '';
 
   @override
@@ -22,6 +23,8 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
 
   Future<void> fetchProjects() async {
     final tokens = await AuthHelper.getTokens();
+    print("Fetching projects with access token: ${tokens['accessToken']}");
+
     try {
       final response = await http.get(
         Uri.parse('http://localhost:3000/projects'),
@@ -35,17 +38,20 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
       if (response.statusCode == 200) {
         setState(() {
           _projects = json.decode(response.body);
+           isLoading = false;
         });
       } else {
         setState(() {
           errorMessage =
               'Failed to fetch projects. Status: ${response.statusCode}';
+          isLoading = false;
         });
       }
     } catch (e) {
     if (mounted) {
       setState(() {
         errorMessage = 'Failed to fetch projects. Error: $e';
+        isLoading = false;
       });
     }
   }
@@ -54,7 +60,11 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ListView.builder(
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : errorMessage.isNotEmpty
+              ? Center(child: Text(errorMessage))
+              :ListView.builder(
         itemCount: _projects.length,
         physics: ScrollPhysics(),
         itemBuilder: (context, index) {

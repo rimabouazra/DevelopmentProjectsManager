@@ -45,4 +45,17 @@ class Task {
       List<String>.from(json['developerNames']),
     );
   }
+
+   Map<String, dynamic> toJson() {
+    return {
+      'taskId': id,
+      'title': title,
+      'projectId': projectId,
+      'completed': status,
+      'description': description,
+      'dueDate': deadline.toIso8601String(),
+      'subtasks': subtasks.map((subtask) => subtask.toJson()).toList(),
+      'developerNames': developerNames,
+    };
+  }
 }

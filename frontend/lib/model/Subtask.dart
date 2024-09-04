@@ -35,6 +35,20 @@ class Subtask {
       id: json['id'],
       title: json['title'],
       isCompleted: json['isCompleted'],
+      comments: (json['comments'] as List<dynamic>)
+          .map((commentJson) => Comment.fromJson(commentJson))
+          .toList(),
+      status: json['status'],
     );
+  }
+
+   Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'isCompleted': isCompleted,
+      'comments': comments.map((comment) => comment.toJson()).toList(),
+      'status': status,
+    };
   }
 }

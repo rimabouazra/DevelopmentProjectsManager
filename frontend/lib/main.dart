@@ -17,8 +17,8 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => TaskModel()),
-        ChangeNotifierProvider(create: (_) => ProjectModel()),
-        ChangeNotifierProvider(create: (_) => DeveloperModel()),
+    ChangeNotifierProvider(create: (_) => ProjectModel()),
+    ChangeNotifierProvider(create: (_) => DeveloperModel()),
         ChangeNotifierProvider(create: (context) => ProjectModel()),
         ChangeNotifierProvider(create: (_) => User(
           idUtilisateur: '', //a default value
@@ -55,8 +55,14 @@ class MyApp extends StatelessWidget {
       home: Builder(
         builder: (context) {
           final developerModel = Provider.of<DeveloperModel>(context, listen: true);
-          return developerModel.user.token!.isEmpty ? const SignupPage() : ListProjectsWidget();
-        },
+if (developerModel.user == null || developerModel.user!.token == null) {
+            return const SignupPage();
+          }
+
+          // Safely access the token
+          return developerModel.user!.token!.isEmpty
+              ? const SignupPage()
+              : ListProjectsWidget();        },
       ),
     );
   }

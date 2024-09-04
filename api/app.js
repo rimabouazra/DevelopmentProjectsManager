@@ -31,7 +31,7 @@ let authenticate = (req, res, next) => {
         console.error('Token verification failed:', err);
         return res.status(401).send({ message: 'Unauthorized access' });
       }
-  
+      console.log('Decoded token:', decoded);
       req.user_id = decoded._id;
       next();
     });
@@ -267,9 +267,11 @@ app.post("/users/login", async (req, res) => {
             .json({ msg: "User with this email does not exist!" });
         }
 
-         // Debugging: Log the entered password and the stored hashed password
-         console.log("Entered Password:", password);
-         console.log("Stored Hashed Password:", user.password);
+         // Debugging:
+         //console.log("Entered Password:", password);
+         //console.log("Stored Hashed Password:", user.password);
+         console.log("Stored role in database for the user: ", user.role);
+         console.log("User role before sending response: ", user.role);
     
         const isMatch = await bcrypt.compare(password, user.password);
         if (!isMatch) {

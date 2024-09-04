@@ -16,11 +16,33 @@ class ProjectModel extends ChangeNotifier {
     return projects.firstWhere((project) => project.projectId == projectId).tasks;
   }
 
-  void addProject(Project project, User user) {
+  Future<void> addProject(Project project, User user)async {
     if (user.canCreateProject()) {
-      projects.add(project);
-      notifyListeners();
+      try {
+        print("Creating project with token: ${user.token}");
+        print("Request body: ${json.encode(project.toJson())}");
+
+        final response = await http.post(
+          Uri.parse('http://localhost:3000/projects'),
+          headers: {
+            'Content-Type': 'application/json',
+            'x-access-token': user.token?? '',
+          },
+          body: json.encode(project.toJson()),
+        );
+        print("Response status: ${response.statusCode}");
+        print("Response body: ${response.body}");
+        if (response.statusCode == 201) {
+          projects.add(Project.fromJson(json.decode(response.body)));
+          notifyListeners();
+        } else {
+          throw Exception('Failed to create project');
+        }
+      } catch (e) {
+        throw Exception('Failed to create project: $e');
+      }
     } else {
+      print("User does not have permission to create projects.");
       throw Exception("User does not have permission to create projects.");
     }
   }
@@ -57,7 +79,7 @@ class ProjectModel extends ChangeNotifier {
         throw Exception('Failed to load projects');
       }
     } catch (error) {
-      throw error;
+      throw Exception('Failed to fetch projects: $error');
     }
   }
 

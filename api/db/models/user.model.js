@@ -34,7 +34,7 @@ const UserSchema = new mongoose.Schema({
   },
   role: { 
     type: String, 
-    //enum: ['developer', 'project_manager', 'administrator'], 
+    enum: ['developer', 'manager', 'administrator'], 
     required: true 
   },
   sessions: [{
@@ -100,6 +100,10 @@ UserSchema.methods.createSession = function() {
 
 UserSchema.methods.canCreateProject = function () {
   return this.role === 'manager' || this.role === 'administrator';
+};
+
+UserSchema.methods.canCreateTask = function () {
+  return this.role === 'developer' || this.role === 'manager';
 };
 
 

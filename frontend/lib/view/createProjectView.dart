@@ -14,7 +14,6 @@ class CreateProjectView extends StatefulWidget {
 
 class _CreateProjectViewState extends State<CreateProjectView> {
   final _formKey = GlobalKey<FormState>();
-  final _idController = TextEditingController();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   List<User> _selectedDevelopers = [];
@@ -38,6 +37,7 @@ class _CreateProjectViewState extends State<CreateProjectView> {
   @override
   Widget build(BuildContext context) {
     final developerModel = Provider.of<DeveloperModel>(context);
+    final currentUser = developerModel.user;
     return Scaffold(
       appBar: AppBar(
         title: Text('Create New Project'),
@@ -92,23 +92,27 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                 ),
               SizedBox(height: 16.0),
               ElevatedButton(
-                onPressed: () {
+                onPressed: () async{
                   if (_formKey.currentState?.validate() ?? false) {
                     _formKey.currentState!.save();
                     final newProject = Project(
-                      _idController.text,
+                      '',
                       _titleController.text,
                       _descriptionController.text,
                       [],
                       _selectedDevelopers,
                     );
                     final currentUser =
-                        Provider.of<User>(context, listen: false);
-
+                        Provider.of<DeveloperModel>(context, listen: false).user;
+                    print("Current user: ${currentUser.toString()}");
+                    print("Can create project: ${currentUser.canCreateProject()}");
                     if (currentUser.canCreateProject()) {
                       try {
-                        Provider.of<ProjectModel>(context, listen: false)
-                            .addProject(newProject, currentUser!);
+                        print("New project title: ${_titleController.text}");
+                        print("Selected developers: $_selectedDevelopers");
+
+                        await Provider.of<ProjectModel>(context, listen: false)
+                            .addProject(newProject, currentUser);
                         Navigator.pop(context);
                       } catch (e) {
                         ScaffoldMessenger.of(context).showSnackBar(

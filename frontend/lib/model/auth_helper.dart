@@ -63,6 +63,7 @@ class AuthHelper {
       );
       //debugging
       print("Signup request body: ${user.toMap()}");
+      print("User signed up with role: ${role.toString()}");
 
       http.Response res = await http.post(
         Uri.parse('http://localhost:3000/users'),
@@ -71,11 +72,15 @@ class AuthHelper {
           'Content-Type': 'application/json; charset=UTF-8',
         },
       );
+      //debugging
+      print("Backend response during signup: ${res.body}");
 
       httpErrorHandle(
         response: res,
         context: context,
         onSuccess: () async {
+          // Debugging: Confirm the signup succeeded
+          print("Signup successful for user: $name with role: ${role.toString()}");
           showSnackBar(
             context,
             'Account created! Login with the same credentials!',
@@ -124,6 +129,8 @@ class AuthHelper {
           SharedPreferences prefs = await SharedPreferences.getInstance();
           //final responseData = jsonDecode(res.body);
           userProvider.setUser(res.body);
+
+          print("User logged in with role: ${userProvider.user.role.toString()}");
 
           print("Access Token: ${res.headers['x-access-token']}");
           print("Refresh Token: ${res.headers['x-refresh-token']}");
