@@ -132,14 +132,24 @@ class AuthHelper {
 
           print("User logged in with role: ${userProvider.user.role.toString()}");
 
-          print("Access Token: ${res.headers['x-access-token']}");
-          print("Refresh Token: ${res.headers['x-refresh-token']}");
+          final accessToken = res.headers['x-access-token'] ?? '';
+          final responseBody = jsonDecode(res.body);
+          final token = responseBody['token'];
+          final refreshToken = res.headers['x-refresh-token'] ?? '';
+        
+          if (token== null || refreshToken.isEmpty) {
+            throw Exception('Failed to get tokens from login response.');
+          }
+
+          print("Access Token: $token");
+          print("Refresh Token: $refreshToken");
           //await prefs.setString('x-access-token', responseData['token']);
           await prefs.setString(
               'x-refresh-token', res.headers['x-refresh-token'] ?? '');
           await prefs.setString(
-              'x-access-token', res.headers['x-access-token'] ?? '');
+              'x-access-token', token);
 
+          saveTokens(accessToken,refreshToken);
           navigator.pushAndRemoveUntil(
             MaterialPageRoute(
               builder: (context) => ListTasksView(),
@@ -168,6 +178,15 @@ class AuthHelper {
   // Function to get stored tokens
   static Future<Map<String, String>> getTokens() async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? accessToken = prefs.getString('x-access-token');
+    String? refreshToken = prefs.getString('x-refresh-token');
+
+  if (accessToken == null || accessToken.isEmpty) {
+    throw Exception('No access token found');
+  }
+  if (refreshToken == null || refreshToken.isEmpty) {
+    throw Exception('No refresh token found');
+  }
     return {
       'accessToken': prefs.getString('accessToken') ?? '',
       'refreshToken': prefs.getString('refreshToken') ?? '',
@@ -176,7 +195,7 @@ class AuthHelper {
 
   // Function to store tokens
   static Future<void> saveTokens(
-      String accessToken, String refreshToken) async {
+    String accessToken, String refreshToken) async {
     final SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.setString('accessToken', accessToken);
     await prefs.setString('refreshToken', refreshToken);

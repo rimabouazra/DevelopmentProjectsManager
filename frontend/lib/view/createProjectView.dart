@@ -100,7 +100,7 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                       _titleController.text,
                       _descriptionController.text,
                       [],
-                      _selectedDevelopers,
+                      _selectedDevelopers.isNotEmpty ? _selectedDevelopers : [],
                     );
                     final currentUser =
                         Provider.of<DeveloperModel>(context, listen: false).user;

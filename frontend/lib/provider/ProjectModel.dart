@@ -5,7 +5,7 @@ import 'package:frontend/model/Project.dart';
 import 'package:frontend/model/Task.dart';
 import 'package:frontend/model/User.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ProjectModel extends ChangeNotifier {
   List<Project> projects = [];
@@ -13,28 +13,41 @@ class ProjectModel extends ChangeNotifier {
   List<Project> get allProjects => projects;
 
   List<Task> getTasksForProject(String projectId) {
-    return projects.firstWhere((project) => project.projectId == projectId).tasks;
+    return projects
+        .firstWhere((project) => project.projectId == projectId)
+        .tasks;
   }
 
-  Future<void> addProject(Project project, User user)async {
+  Future<void> addProject(Project project, User user) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('x-access-token');
+
+    if (token == null || token.isEmpty) {
+      print("Error: No token available for the user.");
+      throw Exception('Failed to create project: No token provided');
+    }
     if (user.canCreateProject()) {
       try {
-        print("Creating project with token: ${user.token}");
+        print("Creating project with token: $token");
         print("Request body: ${json.encode(project.toJson())}");
 
         final response = await http.post(
           Uri.parse('http://localhost:3000/projects'),
           headers: {
             'Content-Type': 'application/json',
-            'x-access-token': user.token?? '',
+            'x-access-token': token,
           },
-          body: json.encode(project.toJson()),
+          body: json.encode(
+            //project.toJson(),
+            {"title": project.title,}
+            ),
         );
         print("Response status: ${response.statusCode}");
         print("Response body: ${response.body}");
-        if (response.statusCode == 201) {
+        if (response.statusCode == 200 || response.statusCode == 201) {
           projects.add(Project.fromJson(json.decode(response.body)));
           notifyListeners();
+          await fetchProjects();
         } else {
           throw Exception('Failed to create project');
         }
@@ -47,7 +60,7 @@ class ProjectModel extends ChangeNotifier {
     }
   }
 
-   void updateProject(Project project, User user) {
+  void updateProject(Project project, User user) {
     if (user.canModifyProject()) {
       // Update logic here
       notifyListeners();
@@ -57,17 +70,25 @@ class ProjectModel extends ChangeNotifier {
   }
 
   void setProjects(List<Project> newProjects) {
-  projects = newProjects;
-  notifyListeners();
-}
+    projects = newProjects;
+    notifyListeners();
+  }
+
   Future<void> fetchProjects() async {
-    final url = 'http://localhost:3000/projects'; 
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('x-access-token');
+
+  if (token == null || token.isEmpty) {
+    print("Error: No access token found.");
+    return;
+  }
+    final url = 'http://localhost:3000/projects';
 
     try {
       final response = await http.get(
         Uri.parse(url),
         headers: {
-          'x-access-token': 'x-access-token', 
+          'x-access-token': 'x-access-token',
         },
       );
 
@@ -82,5 +103,4 @@ class ProjectModel extends ChangeNotifier {
       throw Exception('Failed to fetch projects: $error');
     }
   }
-
 }

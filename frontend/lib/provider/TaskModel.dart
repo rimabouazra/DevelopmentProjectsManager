@@ -1,8 +1,12 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 import 'package:dart_date/dart_date.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/model/Subtask.dart';
 import 'package:frontend/model/Task.dart';
 import 'package:frontend/library/globals.dart' as globals;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class TaskModel extends ChangeNotifier {
   final Map<String, List<Task>> tasks = {
@@ -123,4 +127,41 @@ class TaskModel extends ChangeNotifier {
       }
     }
   }
+
+  Future<void> addTask(Task task) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('x-access-token');
+
+  if (token == null || token.isEmpty) {
+    print("Error: No token available for the user.");
+    throw Exception('Failed to create task: No token provided');
+  }
+
+  try {
+    final response = await http.post(
+      Uri.parse('http://localhost:3000/projects/${task.projectId}/tasks'),
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token,
+      },
+      body: json.encode({
+        "title": task.title,
+        "description": task.description,
+        "dueDate": task.deadline.toIso8601String(),
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      print("Task created successfully: ${response.body}");
+      Task newTask = Task.fromJson(json.decode(response.body));
+      addTaskToProject(newTask.projectId, newTask);
+      notifyListeners();
+    } else {
+      throw Exception('Failed to create task');
+    }
+  } catch (e) {
+    throw Exception('Failed to create task: $e');
+  }
+}
+
 }

@@ -4,7 +4,7 @@ import 'package:frontend/widget/ListProjectWidget.dart';
 import 'package:frontend/widget/ListTaskWidget.dart';
 
 class ListTasksView extends StatefulWidget {
-  final String? projectId;  // Accept projectId as an optional parameter
+  final String? projectId; // Accept projectId as an optional parameter
 
   const ListTasksView({Key? key, this.projectId}) : super(key: key);
 
@@ -13,9 +13,10 @@ class ListTasksView extends StatefulWidget {
 }
 
 class _ListTasksViewState extends State<ListTasksView> {
-   void signOutUser(BuildContext context) {
+  void signOutUser(BuildContext context) {
     AuthHelper().signOut(context);
   }
+
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
@@ -50,25 +51,24 @@ class _ListTasksViewState extends State<ListTasksView> {
           ],
         ),
         bottomNavigationBar: Padding(
-  padding: const EdgeInsets.all(8.0),
-  child: ElevatedButton(
-    onPressed: () => signOutUser(context),
-    style: ButtonStyle(
-      backgroundColor: WidgetStateProperty.all(Colors.blue),
-      textStyle: WidgetStateProperty.all(
-        const TextStyle(color: Colors.white),
-      ),
-      minimumSize: WidgetStateProperty.all(
-        Size(MediaQuery.of(context).size.width / 2.5, 50),
-      ),
-    ),
-    child: const Text(
-      "Sign Out",
-      style: TextStyle(color: Colors.white, fontSize: 16),
-    ),
-  ),
-),
-
+          padding: const EdgeInsets.all(8.0),
+          child: ElevatedButton(
+            onPressed: () => signOutUser(context),
+            style: ButtonStyle(
+              backgroundColor: WidgetStateProperty.all(Colors.blue),
+              textStyle: WidgetStateProperty.all(
+                const TextStyle(color: Colors.white),
+              ),
+              minimumSize: WidgetStateProperty.all(
+                Size(MediaQuery.of(context).size.width / 2.5, 50),
+              ),
+            ),
+            child: const Text(
+              "Sign Out",
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          ),
+        ),
       ),
     );
   }

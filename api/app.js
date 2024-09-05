@@ -108,6 +108,7 @@ app.get('/projects', authenticate, async (req, res) => {
 
         let projectDoc = await newProject.save();
         res.send(projectDoc);
+        /*res.status(201).send(projectDoc);*/
     } catch (e) {
         res.status(500).send(e);
     }
@@ -280,6 +281,11 @@ app.post("/users/login", async (req, res) => {
     
         const refreshToken = await user.createSession();
         const accessToken = await user.generateAccessAuthToken();
+
+        if (!refreshToken || !accessToken) {
+            return res.status(500).json({ msg: 'Failed to generate tokens' });
+          }
+          
         res
         .header('x-refresh-token', refreshToken)
         .header('x-access-token', accessToken)

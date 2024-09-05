@@ -12,11 +12,11 @@ class Project {
 
   factory Project.fromJson(Map<String, dynamic> json) {
     return Project(
-      json['projectId'],
-      json['title'],
-      json['description'],
-      (json['tasks'] as List<dynamic>).map((taskJson) => Task.fromJson(taskJson)).toList(),
-      (json['developers'] as List<dynamic>).map((userJson) => User.fromJson(userJson)).toList(),
+      json['projectId']?? '',
+      json['title']?? 'No Title',
+      json['description']?? '',
+      (json['tasks'] as List<dynamic>).map((taskJson) => Task.fromJson(taskJson)).toList() ?? [],
+      (json['developers'] as List<dynamic>).map((userJson) => User.fromJson(userJson)).toList() ?? [],
     );
   }
    Map<String, dynamic> toJson() {

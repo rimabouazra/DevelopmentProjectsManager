@@ -23,14 +23,23 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
 
   Future<void> fetchProjects() async {
     final tokens = await AuthHelper.getTokens();
-    print("Fetching projects with access token: ${tokens['accessToken']}");
+    final accessToken = tokens['accessToken'];
+
+    if (accessToken == null || accessToken.isEmpty) {
+    setState(() {
+      errorMessage = 'No access token found';
+      isLoading = false;
+    });
+    return;
+  }
+    print("Fetching projects with access token: $accessToken");
 
     try {
       final response = await http.get(
         Uri.parse('http://localhost:3000/projects'),
         headers: <String, String>{
           'Content-Type': 'application/json; charset=UTF-8',
-          'x-access-token': tokens['accessToken']!,
+          'x-access-token': accessToken,
         },
       );
       if (!mounted) return;
@@ -71,8 +80,8 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
           final project = _projects[index];
           return Card(
             child: ListTile(
-              title: Text(project['title']),
-              subtitle: Text(project['description']),
+              title: Text(project['title'] ?? 'Unnamed Project'),
+              subtitle: Text(project['description'] ?? 'No Description'),
               trailing: ElevatedButton(
                 child: Text("View Tasks"),
                 onPressed: () {
@@ -83,8 +92,7 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
                         appBar:
                             AppBar(title: Text("${project['title']} Tasks")),
                         body: ProjectTasksView(
-                          projectId: project[
-                              'projectId'], // Pass the projectId to the ProjectTasksView
+                          projectId: project['_id'], // Pass the projectId to the ProjectTasksView
                         ),
                       ),
                     ),
