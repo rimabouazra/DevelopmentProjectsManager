@@ -8,18 +8,24 @@ class Project {
   List<Task> tasks;
   final List<User> developers;
 
-  Project(this.projectId,this.title, this.description, this.tasks ,this.developers);
+  Project(this.projectId, this.title, this.description, this.tasks,
+      this.developers);
 
   factory Project.fromJson(Map<String, dynamic> json) {
     return Project(
-      json['projectId']?? '',
-      json['title']?? 'No Title',
-      json['description']?? '',
-      (json['tasks'] as List<dynamic>).map((taskJson) => Task.fromJson(taskJson)).toList() ?? [],
-      (json['developers'] as List<dynamic>).map((userJson) => User.fromJson(userJson)).toList() ?? [],
+      json['projectId'] ?? '',
+      json['title'] ?? 'No Title',
+      json['description'] ?? '',
+      json['tasks'] != null? (json['tasks'] as List)
+              .map((taskJson) => Task.fromJson(taskJson))
+              .toList()
+          : [],
+      json['developers'] != null 
+            ? (json['developers'] as List).map((devJson) => User.fromJson(devJson)).toList() 
+            : [],
     );
   }
-   Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson() {
     return {
       'projectId': projectId,
       'title': title,

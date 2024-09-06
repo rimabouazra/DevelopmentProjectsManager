@@ -92,7 +92,7 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                 ),
               SizedBox(height: 16.0),
               ElevatedButton(
-                onPressed: () async{
+                onPressed: () async {
                   if (_formKey.currentState?.validate() ?? false) {
                     _formKey.currentState!.save();
                     final newProject = Project(
@@ -103,9 +103,11 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                       _selectedDevelopers.isNotEmpty ? _selectedDevelopers : [],
                     );
                     final currentUser =
-                        Provider.of<DeveloperModel>(context, listen: false).user;
+                        Provider.of<DeveloperModel>(context, listen: false)
+                            .user;
                     print("Current user: ${currentUser.toString()}");
-                    print("Can create project: ${currentUser.canCreateProject()}");
+                    print(
+                        "Can create project: ${currentUser.canCreateProject()}");
                     if (currentUser.canCreateProject()) {
                       try {
                         print("New project title: ${_titleController.text}");
@@ -113,13 +115,16 @@ class _CreateProjectViewState extends State<CreateProjectView> {
 
                         await Provider.of<ProjectModel>(context, listen: false)
                             .addProject(newProject, currentUser);
+                        await Provider.of<ProjectModel>(context, listen: false).fetchProjects();
                         Navigator.pop(context);
                       } catch (e) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                              content: Text(
-                                  'Failed to create project: ${e.toString()}')),
-                        );
+                        if (e.toString().contains('Failed to create project')) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                                content: Text(
+                                    'Failed to create project: ${e.toString()}')),
+                          );
+                        }
                       }
                     } else {
                       ScaffoldMessenger.of(context).showSnackBar(

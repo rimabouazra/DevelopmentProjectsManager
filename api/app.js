@@ -16,6 +16,11 @@ app.use((req, res, next) => {
     res.header("Access-Control-Allow-Methods", "GET, POST, OPTIONS, PUT, PATCH, DELETE");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, x-access-token, x-refresh-token, _id");
     res.header('Access-Control-Expose-Headers', 'x-access-token, x-refresh-token');
+    
+    if (req.method === 'OPTIONS') {
+        return res.status(200).json({});
+    }
+
     next();
 });
 
@@ -145,28 +150,42 @@ app.get('/projects/:projectId/tasks',authenticate, (req, res) => {
   });
   
   app.post('/projects/:projectId/tasks',authenticate, (req, res) => {
+    const projectId = req.params.projectId;
+    console.log('Received projectId:', projectId); // Debugging
     Project.findOne({
         _id: req.params.projectId,
         _userId: req.user_id
     }).then((project) => {
         if (project) {
+            console.log('Project found:', project.title); // Debugging
             // project object found-the currently authenticated user can create new tasks
             return true;
         }
+        console.log('Project not found or unauthorized access.'); // Debugging
         return false;
     }).then((canCreateTask) => {
         if (canCreateTask) {
+            console.log('Creating task with title:', req.body.title); // Debugging
             let newTask = new Task({
                 title: req.body.title,
-                projectId: req.params.projectId
+                projectId: req.params.projectId,
+                completed: false
             });
             newTask.save().then((newTaskDoc) => {
+                console.log('Task created successfully:', newTaskDoc); // Debugging
                 res.send(newTaskDoc);
-            })
+            }).catch((error) => {
+                console.error('Failed to save new task:', error); // Debugging
+                res.status(500).send({ message: 'Failed to create task.' });
+            });
         } else {
+            console.log('Failed to create task: Project not found or unauthorized'); // Debugging
             res.sendStatus(404);
         }
-    })
+    }).catch((error) => {
+        console.error('Error in finding project or creating task:', error); // Debugging
+        res.status(500).send({ message: 'Server error while creating task.' });
+    });
   });
   
   app.patch('/projects/:projectId/tasks/:taskId',authenticate,(req,res)=>{
@@ -285,7 +304,7 @@ app.post("/users/login", async (req, res) => {
         if (!refreshToken || !accessToken) {
             return res.status(500).json({ msg: 'Failed to generate tokens' });
           }
-          
+
         res
         .header('x-refresh-token', refreshToken)
         .header('x-access-token', accessToken)

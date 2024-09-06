@@ -38,13 +38,23 @@ class ProjectModel extends ChangeNotifier {
             'x-access-token': token,
           },
           body: json.encode(
-            //project.toJson(),
-            {"title": project.title,}
-            ),
+              //project.toJson(),
+              {
+                "title": project.title,
+                "description": project.description,
+                "tasks": project.tasks.isNotEmpty ? project.tasks : [],
+                "developers":
+                    project.developers.map((dev) => dev.toJson()).toList(),
+              }),
         );
         print("Response status: ${response.statusCode}");
         print("Response body: ${response.body}");
         if (response.statusCode == 200 || response.statusCode == 201) {
+          final jsonResponse = json.decode(response.body);
+          if (jsonResponse['tasks'] == null) {
+            jsonResponse['tasks'] = []; 
+          }
+          
           projects.add(Project.fromJson(json.decode(response.body)));
           notifyListeners();
           await fetchProjects();
@@ -75,20 +85,20 @@ class ProjectModel extends ChangeNotifier {
   }
 
   Future<void> fetchProjects() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('x-access-token');
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('x-access-token');
 
-  if (token == null || token.isEmpty) {
-    print("Error: No access token found.");
-    return;
-  }
+    if (token == null || token.isEmpty) {
+      print("Error: No access token found.");
+      return;
+    }
     final url = 'http://localhost:3000/projects';
 
     try {
       final response = await http.get(
         Uri.parse(url),
         headers: {
-          'x-access-token': 'x-access-token',
+          'x-access-token': token,
         },
       );
 

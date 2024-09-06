@@ -23,6 +23,12 @@ class _AddTasksViewState extends State<AddTasksView> {
   Project? _selectedProject;
 
   @override
+  void initState() {
+    super.initState();
+    Provider.of<ProjectModel>(context, listen: false).fetchProjects();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Consumer2<TaskModel, ProjectModel>(
         builder: (context, model, projectModel, child) {
@@ -163,6 +169,7 @@ class _AddTasksViewState extends State<AddTasksView> {
                             onChanged: (Project? newValue) {
                               setState(() {
                                 _selectedProject = newValue!;
+                                print('Selected project ID: ${_selectedProject?.projectId}'); // Debugging
                               });
                             },
                             validator: (value) {
@@ -178,14 +185,30 @@ class _AddTasksViewState extends State<AddTasksView> {
           heroTag: null,
           child: Icon(Icons.add),
           onPressed: () {
-            if (_formKey.currentState!.validate() && _selectedProject != null) {
+            if (_formKey.currentState!.validate() &&
+                (widget.projectId != null || _selectedProject != null)) {
+              String? projectId =
+                  widget.projectId ?? _selectedProject?.projectId;
+
+              if (projectId == null || projectId.isEmpty) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text(
+                          'Project ID is missing. Task cannot be created')),
+                );
+                print('Error: Project ID is null or empty'); // Debugging
+                return;
+              }
+              print('Creating task with project ID: $projectId'); // Debugging
+
               Task _newTask = Task(
                   null,
                   _titleController.text,
-                  widget.projectId ?? _selectedProject!.projectId,
+                  projectId,
                   false,
                   _descriptonController.text,
                   _focusedDay, [], []);
+
               model.addTask(_newTask).then((_) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Task created successfully :)')),
@@ -195,6 +218,7 @@ class _AddTasksViewState extends State<AddTasksView> {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Failed to create task: $error')),
                 );
+                print('Failed to create task: $error'); // Debugging
               });
             }
           },

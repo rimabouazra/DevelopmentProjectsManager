@@ -2,8 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:frontend/model/auth_helper.dart';
+import 'package:frontend/provider/ProjectModel.dart';
 import 'package:frontend/view/ProjectTasksView.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 
 class ListProjectsWidget extends StatefulWidget {
   @override
@@ -19,6 +21,9 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
   void initState() {
     super.initState();
     fetchProjects();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ProjectModel>(context, listen: false).fetchProjects();
+    });
   }
 
   Future<void> fetchProjects() async {

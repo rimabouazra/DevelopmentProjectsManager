@@ -137,7 +137,10 @@ class TaskModel extends ChangeNotifier {
     throw Exception('Failed to create task: No token provided');
   }
 
+   print("Token fetched: $token"); // Debugging
+
   try {
+     print("Sending request to create task for project ID: ${task.projectId}"); // Debugging
     final response = await http.post(
       Uri.parse('http://localhost:3000/projects/${task.projectId}/tasks'),
       headers: {
@@ -160,6 +163,7 @@ class TaskModel extends ChangeNotifier {
       throw Exception('Failed to create task');
     }
   } catch (e) {
+    print("Failed to create task: $e"); // Debugging
     throw Exception('Failed to create task: $e');
   }
 }
