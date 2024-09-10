@@ -104,7 +104,14 @@ class ProjectModel extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final List<dynamic> projectList = json.decode(response.body);
+        if (projectList.isEmpty) {
+          print("No projects found"); // Debugging
+          return;
+        }
+        print('Raw project JSON: $projectList'); // Debugging
+
         projects = projectList.map((json) => Project.fromJson(json)).toList();
+        print('Parsed projects: ${projects.length}');// Debugging
         notifyListeners();
       } else {
         throw Exception('Failed to load projects');

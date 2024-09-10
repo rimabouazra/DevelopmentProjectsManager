@@ -15,6 +15,17 @@ class ListTasksWidget extends StatefulWidget {
 
 class _ListTasksWidgetState extends State<ListTasksWidget> {
   bool showDone = true;
+
+   @override
+  void initState() {
+    super.initState();
+    if (widget.projectId != null) {
+      final taskModel = Provider.of<TaskModel>(context, listen: false);
+      print('Fetching tasks for project: ${widget.projectId}');
+      taskModel.fetchTasksForProject(widget.projectId!);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -33,11 +44,18 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
       ),
       body: Consumer<TaskModel>(
         builder: (context, model, child) {
-          // ignore: unused_local_variable
-          final filteredTasks = model.tasks[widget.projectId] ?? [];
-           final tasksToShow = filteredTasks.where((task) =>
+          final filteredTasks = widget.projectId != null  && model.getTasksByProject(widget.projectId!) != null
+            ? model.getTasksByProject(widget.projectId!)
+            : [];
+          final tasksToShow = filteredTasks.where((task) =>
               showDone ? true : !task.status).toList();
+          print('Tasks for project ${widget.projectId}: ${tasksToShow.length}');
 
+          if (tasksToShow.isEmpty) {
+            return Center(
+              child: Text('No tasks available'),
+            );
+          }
           return ListView.builder(
             itemCount:tasksToShow.length,
             itemBuilder: (BuildContext context, int index) {
@@ -80,7 +98,6 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
                         IconButton(
                           icon: Icon(Icons.add),
                           onPressed: () {
-                            // Navigate to Add Subtask view (implement this route)
                             Navigator.pushNamed(context, 'addSubtask');
                           },
                         ),

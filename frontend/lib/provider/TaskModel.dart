@@ -9,7 +9,8 @@ import 'package:frontend/library/globals.dart' as globals;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TaskModel extends ChangeNotifier {
-  final Map<String, List<Task>> tasks = {
+  final Map<String, List<Task>> tasks = 
+  {
     globals.Late: [
       Task("1", "Task 1", "1", false, "Task's Descriptoion",
           DateTime.now().add(Duration(days: 1)),[Subtask(id: "1", title: "Subtask 1", isCompleted: false),
@@ -109,6 +110,7 @@ class TaskModel extends ChangeNotifier {
     if (!tasksByProject.containsKey(projectId)) {
       tasksByProject[projectId] = [];
     }
+     print('Adding task to project: ${task.title}, ID: ${task.id}'); // Debugging
     tasksByProject[projectId]!.add(task);
     notifyListeners();
   }
@@ -127,6 +129,43 @@ class TaskModel extends ChangeNotifier {
       }
     }
   }
+
+  Future<void> fetchTasksForProject(String projectId) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('x-access-token');
+
+  if (token == null || token.isEmpty) {
+    print("Error: No token available for the user.");
+    throw Exception('Failed to fetch tasks: No token provided');
+  }
+
+  try {
+    final response = await http.get(
+      Uri.parse('http://localhost:3000/projects/$projectId/tasks'),
+      headers: {
+        'x-access-token': token,
+      },
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> tasksJson = json.decode(response.body);
+      List<Task> tasks = tasksJson.map((json) => Task.fromJson(json)).toList();
+
+      // Add the fetched tasks to the specific project
+      if (!tasksByProject.containsKey(projectId)) {
+        tasksByProject[projectId] = []; 
+      }
+      tasksByProject[projectId] = tasks;
+      notifyListeners();
+    } else {
+      throw Exception('Failed to fetch tasks');
+    }
+  } catch (e) {
+    print("Failed to fetch tasks: $e");
+    throw Exception('Failed to fetch tasks: $e');
+  }
+}
+
 
   Future<void> addTask(Task task) async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -150,14 +189,19 @@ class TaskModel extends ChangeNotifier {
       body: json.encode({
         "title": task.title,
         "description": task.description,
-        "dueDate": task.deadline.toIso8601String(),
+         "dueDate": task.deadline.toIso8601String(),
       }),
     );
+
+     print('Response status: ${response.statusCode}');// Debugging
+     print('Response body: ${response.body}');// Debugging
 
     if (response.statusCode == 201) {
       print("Task created successfully: ${response.body}");
       Task newTask = Task.fromJson(json.decode(response.body));
       addTaskToProject(newTask.projectId, newTask);
+      await fetchTasksForProject(newTask.projectId);
+      
       notifyListeners();
     } else {
       throw Exception('Failed to create task');

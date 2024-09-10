@@ -13,7 +13,7 @@ class Project {
 
   factory Project.fromJson(Map<String, dynamic> json) {
     return Project(
-      json['projectId'] ?? '',
+      json['_id'] ?? '',
       json['title'] ?? 'No Title',
       json['description'] ?? '',
       json['tasks'] != null? (json['tasks'] as List)
@@ -34,4 +34,24 @@ class Project {
       'developers': developers.map((developer) => developer.toJson()).toList(),
     };
   }
+
+  @override
+  String toString() {
+    return 'Project(projectId: $projectId, title: $title)';
+  }
+
+  // Example Test
+void main() {
+  final json = {
+    'projectId': '123',
+    'title': 'Test Project',
+    'description': 'A project for testing',
+    'tasks': [],
+    'developers': [],
+  };
+
+  final project = Project.fromJson(json);
+  print(project); // Should print: Project(projectId: 123, title: Test Project)
+}
+
 }

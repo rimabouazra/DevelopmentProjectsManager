@@ -169,11 +169,12 @@ app.get('/projects/:projectId/tasks',authenticate, (req, res) => {
             let newTask = new Task({
                 title: req.body.title,
                 projectId: req.params.projectId,
+                dueDate: req.body.dueDate,
                 completed: false
             });
             newTask.save().then((newTaskDoc) => {
                 console.log('Task created successfully:', newTaskDoc); // Debugging
-                res.send(newTaskDoc);
+                res.status(201).send(newTaskDoc);
             }).catch((error) => {
                 console.error('Failed to save new task:', error); // Debugging
                 res.status(500).send({ message: 'Failed to create task.' });

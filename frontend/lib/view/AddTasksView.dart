@@ -25,13 +25,38 @@ class _AddTasksViewState extends State<AddTasksView> {
   @override
   void initState() {
     super.initState();
-    Provider.of<ProjectModel>(context, listen: false).fetchProjects();
+    // Debugging
+    print('Received project ID: ${widget.projectId}');
+    //Provider.of<ProjectModel>(context, listen: false).fetchProjects();
+     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final projectModel = Provider.of<ProjectModel>(context, listen: false);
+      await projectModel.fetchProjects();
+      print('Available projects: ${projectModel.allProjects}');
+      
+      if (widget.projectId != null) {
+        setState(() {
+          _selectedProject = projectModel.allProjects.firstWhere(
+            (project) => project.projectId == widget.projectId,
+            orElse: () => Project('', 'No Project', 'No Description', [], []),
+          );
+          print('Selected project ID: ${_selectedProject?.projectId}');
+        });
+      }
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Consumer2<TaskModel, ProjectModel>(
         builder: (context, model, projectModel, child) {
+          // Debugging to check if projectId is passed correctly and project is found
+      if (widget.projectId != null&& _selectedProject == null) {
+        _selectedProject = projectModel.projects.firstWhere(
+          (project) => project.projectId == widget.projectId,
+          orElse: () => Project('', 'No Project', 'No Description', [], []),
+        );
+        print('Selected project ID: ${_selectedProject?.projectId}');
+      }
       return Scaffold(
         appBar: AppBar(
           title: Text("Add new Task"),
@@ -159,7 +184,7 @@ class _AddTasksViewState extends State<AddTasksView> {
                               labelText: "Select Project",
                               border: OutlineInputBorder(),
                             ),
-                            value: _selectedProject,
+                            value: projectModel.projects.contains(_selectedProject) ? _selectedProject : null,
                             items: projectModel.projects.map((Project project) {
                               return DropdownMenuItem<Project>(
                                 value: project,
@@ -180,6 +205,7 @@ class _AddTasksViewState extends State<AddTasksView> {
                             },
                           ),
                         ),
+
                     ])))),
         floatingActionButton: FloatingActionButton(
           heroTag: null,
@@ -199,6 +225,7 @@ class _AddTasksViewState extends State<AddTasksView> {
                 print('Error: Project ID is null or empty'); // Debugging
                 return;
               }
+              final dueDate = _selectedDay.toIso8601String();
               print('Creating task with project ID: $projectId'); // Debugging
 
               Task _newTask = Task(
@@ -207,13 +234,16 @@ class _AddTasksViewState extends State<AddTasksView> {
                   projectId,
                   false,
                   _descriptonController.text,
-                  _focusedDay, [], []);
+                  _selectedDay, [], []);
 
-              model.addTask(_newTask).then((_) {
+               Provider.of<TaskModel>(context, listen: false)
+               .addTask(_newTask)
+               .then((_) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Task created successfully :)')),
                 );
-                Navigator.pushReplacementNamed(context, "ListTasks");
+                //Navigator.pushReplacementNamed(context, "ListTasks");
+                Navigator.pop(context);
               }).catchError((error) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text('Failed to create task: $error')),
