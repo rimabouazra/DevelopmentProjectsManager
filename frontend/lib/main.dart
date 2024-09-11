@@ -4,6 +4,7 @@ import 'package:frontend/model/User.dart';
 import 'package:frontend/provider/DeveloperModel.dart';
 import 'package:frontend/provider/ProjectModel.dart';
 import 'package:frontend/provider/TaskModel.dart';
+import 'package:frontend/view/AddSubtaskView.dart';
 import 'package:frontend/view/AddTasksView.dart';
 import 'package:frontend/view/ListTasksView.dart';
 import 'package:frontend/view/SubtasksView.dart';
@@ -17,9 +18,8 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => TaskModel()),
-    ChangeNotifierProvider(create: (_) => ProjectModel()),
-    ChangeNotifierProvider(create: (_) => DeveloperModel()),
-        ChangeNotifierProvider(create: (context) => ProjectModel()),
+        ChangeNotifierProvider(create: (_) => ProjectModel()),
+        ChangeNotifierProvider(create: (_) => DeveloperModel()),
         ChangeNotifierProvider(create: (_) => User(
           idUtilisateur: '', //a default value
             nomUtilisateur: '',
@@ -51,6 +51,10 @@ class MyApp extends StatelessWidget {
         'viewTaskDetails': (context) => SubtasksView(
               task: ModalRoute.of(context)!.settings.arguments as Task,
             ),
+        'addSubtask': (context) {
+      final Task task = ModalRoute.of(context)!.settings.arguments as Task;
+      return AddSubtaskView(task: task); // Define your AddSubtaskView here
+    },
       },
       home: Builder(
         builder: (context) {

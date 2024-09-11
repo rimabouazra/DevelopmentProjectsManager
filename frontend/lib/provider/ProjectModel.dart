@@ -120,4 +120,9 @@ class ProjectModel extends ChangeNotifier {
       throw Exception('Failed to fetch projects: $error');
     }
   }
+
+  List<String> getProjectIds() {
+  return projects.map((project) => project.projectId).toList();
+}
+
 }

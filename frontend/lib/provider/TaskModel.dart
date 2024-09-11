@@ -78,12 +78,12 @@ class TaskModel extends ChangeNotifier {
   }
 
   void markAsDone(String projectId, int taskIndex) {
-     if (tasks.containsKey(projectId)) {
-      final task = tasks[projectId]![taskIndex];
-      task.status = true;
-      updateTask(task);
-    }
-    notifyListeners();
+     final task = tasksByProject[projectId]?[taskIndex];
+  if (task != null) {
+    task.status = !task.status; 
+    updateTask(task);
+    notifyListeners(); 
+  }
   }
 
   String guessTodoKeyFromDate(DateTime deadline) {
@@ -107,10 +107,15 @@ class TaskModel extends ChangeNotifier {
   }
 
   void addTaskToProject(String projectId, Task task) {
+    if (projectId.isEmpty) {
+    print("Error: projectId is empty, cannot add task to project.");
+    return;
+   }
+
     if (!tasksByProject.containsKey(projectId)) {
       tasksByProject[projectId] = [];
     }
-     print('Adding task to project: ${task.title}, ID: ${task.id}'); // Debugging
+    print('Adding task to project: ${task.title}, ID: ${task.id}'); // Debugging
     tasksByProject[projectId]!.add(task);
     notifyListeners();
   }
@@ -118,21 +123,26 @@ class TaskModel extends ChangeNotifier {
   void updateTask(Task updatedTask) {
     final projectId = updatedTask.projectId;
 
-    if (tasks.containsKey(projectId)) {
-      final taskIndex = tasks[projectId]!
-          .indexWhere((task) => task.id == updatedTask.id);
+    if (tasksByProject.containsKey(projectId)) {
+    final taskIndex = tasksByProject[projectId]!.indexWhere((task) => task.id == updatedTask.id);
 
-      if (taskIndex != -1) {
-        // Replace the old task with the updated task
-        tasks[projectId]![taskIndex] = updatedTask;
-        notifyListeners();
-      }
+    if (taskIndex != -1) {
+      tasksByProject[projectId]![taskIndex] = updatedTask;
+      notifyListeners(); 
     }
+  }
   }
 
   Future<void> fetchTasksForProject(String projectId) async {
+  if (projectId.isEmpty) {
+    print("Error: projectId is empty, cannot fetch tasks.");
+    return;
+  }
+  print("Fetching tasks for project ID: $projectId");
+
   SharedPreferences prefs = await SharedPreferences.getInstance();
   final token = prefs.getString('x-access-token');
+  print("Token fetched: $token"); // Debugging
 
   if (token == null || token.isEmpty) {
     print("Error: No token available for the user.");
@@ -148,6 +158,7 @@ class TaskModel extends ChangeNotifier {
     );
 
     if (response.statusCode == 200) {
+       print('Response body: ${response.body}'); // Debugging
       final List<dynamic> tasksJson = json.decode(response.body);
       List<Task> tasks = tasksJson.map((json) => Task.fromJson(json)).toList();
 
@@ -158,6 +169,7 @@ class TaskModel extends ChangeNotifier {
       tasksByProject[projectId] = tasks;
       notifyListeners();
     } else {
+      print('Failed to fetch tasks: ${response.statusCode}'); // Debugging
       throw Exception('Failed to fetch tasks');
     }
   } catch (e) {
@@ -199,9 +211,10 @@ class TaskModel extends ChangeNotifier {
     if (response.statusCode == 201) {
       print("Task created successfully: ${response.body}");
       Task newTask = Task.fromJson(json.decode(response.body));
-      addTaskToProject(newTask.projectId, newTask);
       await fetchTasksForProject(newTask.projectId);
-      
+      addTaskToProject(newTask.projectId, newTask);
+      //await fetchTasksForProject(newTask.projectId);
+    
       notifyListeners();
     } else {
       throw Exception('Failed to create task');
@@ -211,5 +224,45 @@ class TaskModel extends ChangeNotifier {
     throw Exception('Failed to create task: $e');
   }
 }
+
+Future<void> fetchTasksForAllProjects(List<String> projectIds) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('x-access-token');
+
+  if (token == null || token.isEmpty) {
+    print("Error: No token available for the user.");
+    throw Exception('Failed to fetch tasks: No token provided');
+  }
+
+  for (String projectId in projectIds) {
+    print("Fetching tasks for project ID: $projectId");
+
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:3000/projects/$projectId/tasks'),
+        headers: {
+          'x-access-token': token,
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> tasksJson = json.decode(response.body);
+        List<Task> tasks = tasksJson.map((json) => Task.fromJson(json)).toList();
+
+        // Add the fetched tasks to the specific project
+        if (!tasksByProject.containsKey(projectId)) {
+          tasksByProject[projectId] = [];
+        }
+        tasksByProject[projectId] = tasks;
+        notifyListeners();
+      } else {
+        print('Failed to fetch tasks for project $projectId: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("Failed to fetch tasks for project $projectId: $e");
+    }
+  }
+}
+
 
 }

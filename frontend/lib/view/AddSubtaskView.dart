@@ -50,7 +50,7 @@ class _AddSubtaskViewState extends State<AddSubtaskView> {
             children: [
               TextFormField(
                 controller: _titleController,
-                decoration: InputDecoration(labelText: 'Subtask Title'),
+                decoration: InputDecoration(labelText: 'Add subtask for task: ${widget.task.title}'),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter a title';
