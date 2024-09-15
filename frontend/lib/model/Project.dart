@@ -6,7 +6,7 @@ class Project {
   String title;
   String description;
   List<Task> tasks;
-  final List<User> developers;
+  List<User> developers;
 
   Project(this.projectId, this.title, this.description, this.tasks,
       this.developers);
@@ -39,19 +39,5 @@ class Project {
   String toString() {
     return 'Project(projectId: $projectId, title: $title)';
   }
-
-  // Example Test
-void main() {
-  final json = {
-    'projectId': '123',
-    'title': 'Test Project',
-    'description': 'A project for testing',
-    'tasks': [],
-    'developers': [],
-  };
-
-  final project = Project.fromJson(json);
-  print(project); // Should print: Project(projectId: 123, title: Test Project)
-}
 
 }

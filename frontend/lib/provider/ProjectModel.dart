@@ -10,6 +10,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 class ProjectModel extends ChangeNotifier {
   List<Project> projects = [];
 
+  bool isLoading = false;
+  String errorMessage = ''; 
+
   List<Project> get allProjects => projects;
 
   List<Task> getTasksForProject(String projectId) {
@@ -70,21 +73,15 @@ class ProjectModel extends ChangeNotifier {
     }
   }
 
-  void updateProject(Project project, User user) {
-    if (user.canModifyProject()) {
-      // Update logic here
-      notifyListeners();
-    } else {
-      throw Exception("User does not have permission to modify projects.");
-    }
-  }
-
   void setProjects(List<Project> newProjects) {
     projects = newProjects;
     notifyListeners();
   }
 
   Future<void> fetchProjects() async {
+     isLoading = true; 
+    errorMessage = ''; 
+    notifyListeners();
     SharedPreferences prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('x-access-token');
 
@@ -105,6 +102,7 @@ class ProjectModel extends ChangeNotifier {
       if (response.statusCode == 200) {
         final List<dynamic> projectList = json.decode(response.body);
         if (projectList.isEmpty) {
+          errorMessage = "No projects found.";
           print("No projects found"); // Debugging
           return;
         }
@@ -114,15 +112,78 @@ class ProjectModel extends ChangeNotifier {
         print('Parsed projects: ${projects.length}');// Debugging
         notifyListeners();
       } else {
+        errorMessage = 'Failed to load projects. Status: ${response.statusCode}';
         throw Exception('Failed to load projects');
       }
     } catch (error) {
       throw Exception('Failed to fetch projects: $error');
+    } finally {
+      isLoading = false;  // Stop loading
+      notifyListeners();
     }
   }
 
   List<String> getProjectIds() {
   return projects.map((project) => project.projectId).toList();
 }
+
+Future<void> deleteProject(String projectId) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('x-access-token');
+
+  if (token == null || token.isEmpty) {
+    print("Error: No access token found.");
+    errorMessage = "No access token found.";
+    notifyListeners();
+    return;
+  }
+
+  final response = await http.delete(
+    Uri.parse('http://localhost:3000/projects/$projectId'),
+    headers: {
+      'x-access-token': token,
+    },
+  );
+
+  if (response.statusCode == 200) {
+    projects.removeWhere((project) => project.projectId == projectId);
+    notifyListeners();
+  } else {
+    throw Exception('Failed to delete project');
+  }
+}
+
+Future<void> updateProject(Project project) async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  final token = prefs.getString('x-access-token');
+
+  if (token == null || token.isEmpty) {
+    print("Error: No access token found.");
+    return;
+  }
+
+  final response = await http.patch(
+    Uri.parse('http://localhost:3000/projects/${project.projectId}'),
+    headers: {
+      'Content-Type': 'application/json',
+      'x-access-token': token,
+    },
+    body: json.encode({
+      'title': project.title,
+      'description': project.description,
+    }),
+  );
+
+  if (response.statusCode == 200) {
+    final index = projects.indexWhere((p) => p.projectId == project.projectId);
+    if (index != -1) {
+      projects[index] = project;
+      notifyListeners();
+    }
+  } else {
+    throw Exception('Failed to update project');
+  }
+}
+
 
 }
