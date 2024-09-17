@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:frontend/model/Project.dart';
 import 'package:frontend/model/Task.dart';
 import 'package:frontend/model/User.dart';
+import 'package:frontend/provider/TaskModel.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProjectModel extends ChangeNotifier {
@@ -119,7 +121,6 @@ class ProjectModel extends ChangeNotifier {
       throw Exception('Failed to fetch projects: $error');
     } finally {
       isLoading = false;  // Stop loading
-      notifyListeners();
     }
   }
 

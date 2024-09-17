@@ -1,9 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:frontend/model/Project.dart';
+import 'package:frontend/model/User.dart';
 import 'package:frontend/model/auth_helper.dart';
 import 'package:frontend/provider/DeveloperModel.dart';
 import 'package:frontend/provider/ProjectModel.dart';
+import 'package:frontend/provider/TaskModel.dart';
 import 'package:frontend/view/ProjectTasksView.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
@@ -18,13 +21,14 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
   bool isLoading = true;
   String errorMessage = '';
   bool isProcessing = false;
-   String? userRole;
+  String userRole = '';
 
   @override
   void initState() {
     super.initState();
-    fetchProjects();
+    //fetchProjects();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchUserRole();
       Provider.of<ProjectModel>(context, listen: false).fetchProjects();
     });
   }
@@ -54,23 +58,20 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
 
       if (response.statusCode == 200) {
         setState(() {
-          _projects = json.decode(response.body);
+          final List<dynamic> projectList = json.decode(response.body);
+          if (projectList.isEmpty) {
+            errorMessage = "No projects found.";
+          } else {
+            _projects = projectList.map((json) => Project.fromJson(json)).toList();
+          }
           isLoading = false;
         });
       } else {
-        setState(() {
-          errorMessage =
-              'Failed to fetch projects. Status: ${response.statusCode}';
-          isLoading = false;
-        });
+        isLoading = false;
+        throw Exception('Failed to load projects');
       }
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          errorMessage = 'Failed to fetch projects. Error: $e';
-          isLoading = false;
-        });
-      }
+      throw Exception('Failed to fetch projects: $e');
     }
   }
 
@@ -93,7 +94,6 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
               onPressed: () async {
                 Navigator.of(context).pop();
                 try {
-                  // Call deleteProject method from ProjectModel
                   await Provider.of<ProjectModel>(context, listen: false)
                       .deleteProject(projectId);
                   ScaffoldMessenger.of(context).showSnackBar(
@@ -121,6 +121,17 @@ class ListProjectsWidgetState extends State<ListProjectsWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final projectModel = Provider.of<ProjectModel>(context, listen: false);
+    final taskModel = Provider.of<TaskModel>(context, listen: false);
+
+    void deleteProject(String projectId) async {
+      try {
+        await projectModel.deleteProject(projectId);
+        taskModel.removeTasksForProject(projectId);
+      } catch (e) {
+        print('Failed to delete project: $e');
+      }
+    }
     return Scaffold(
       body: Consumer<ProjectModel>(
         builder: (context, projectModel, child) {

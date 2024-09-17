@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/model/Project.dart';
 import 'package:frontend/model/Task.dart';
+import 'package:frontend/model/User.dart';
+import 'package:frontend/provider/DeveloperModel.dart';
 import 'package:frontend/provider/TaskModel.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
@@ -21,6 +23,8 @@ class _AddTasksViewState extends State<AddTasksView> {
   final _titleController = TextEditingController();
   final _descriptonController = TextEditingController();
   Project? _selectedProject;
+  User? selectedDeveloper;
+   List<User> availableDevelopers = []; 
 
   @override
   void initState() {
@@ -42,14 +46,20 @@ class _AddTasksViewState extends State<AddTasksView> {
           print('Selected project ID: ${_selectedProject?.projectId}');
         });
       }
+      final developerModel = Provider.of<DeveloperModel>(context, listen: false);
+      await developerModel.fetchDevelopers();
+      setState(() {
+        availableDevelopers = developerModel.developers;
+      });
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Consumer2<TaskModel, ProjectModel>(
-        builder: (context, model, projectModel, child) {
-          // Debugging to check if projectId is passed correctly and project is found
+    return Consumer3<TaskModel, ProjectModel, DeveloperModel>(
+        builder: (context, model, projectModel, developerModel, child) {
+           final user = developerModel.user; 
+        // Debugging to check if projectId is passed correctly and project is found
       if (widget.projectId != null&& _selectedProject == null) {
         _selectedProject = projectModel.projects.firstWhere(
           (project) => project.projectId == widget.projectId,
@@ -205,6 +215,25 @@ class _AddTasksViewState extends State<AddTasksView> {
                             },
                           ),
                         ),
+                         if (developerModel.user.role == Role.Manager)
+                      DropdownButtonFormField<User>(
+                        decoration: InputDecoration(
+                          labelText: "Assign Developer",
+                          border: OutlineInputBorder(),
+                        ),
+                        value: selectedDeveloper,
+                        items: availableDevelopers.map((User developer) {
+                          return DropdownMenuItem<User>(
+                            value: developer,
+                            child: Text(developer.nomUtilisateur),
+                          );
+                        }).toList(),
+                        onChanged: (User? newValue) {
+                          setState(() {
+                            selectedDeveloper = newValue!;
+                          });
+                        },
+                      ),
 
                     ])))),
         floatingActionButton: FloatingActionButton(
@@ -235,6 +264,14 @@ class _AddTasksViewState extends State<AddTasksView> {
                   false,
                   _descriptonController.text,
                   _selectedDay, [], []);
+
+               if (developerModel.user.role == Role.Manager) {
+                            _newTask.developerNames = selectedDeveloper != null
+                                ? [selectedDeveloper!.nomUtilisateur]
+                                : [];
+                          } else if (developerModel.user.role == Role.Developer) {
+                            _newTask.developerNames = [developerModel.user.nomUtilisateur];
+                          }
 
                Provider.of<TaskModel>(context, listen: false)
                .addTask(_newTask)

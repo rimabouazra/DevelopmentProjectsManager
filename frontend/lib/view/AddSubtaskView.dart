@@ -22,6 +22,7 @@ class _AddSubtaskViewState extends State<AddSubtaskView> {
       final newSubtask = Subtask(
         id: UniqueKey().toString(),
         title: _titleController.text,
+        isCompleted: false,
       );
 
       setState(() {
@@ -30,6 +31,7 @@ class _AddSubtaskViewState extends State<AddSubtaskView> {
 
       final taskModel = Provider.of<TaskModel>(context, listen: false);
       taskModel.updateTask(widget.task);
+       taskModel.notifyListeners();
 
       Navigator.pop(context);
     }

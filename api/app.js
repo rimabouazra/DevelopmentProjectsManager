@@ -42,7 +42,15 @@ let authenticate = (req, res, next) => {
     });
   };
   
-
+  const authenticateAdmin = (req, res, next) => {
+    const { role } = req.user; // Assuming req.user contains the signed-in user's info
+  
+    if (role !== 'administrator') {
+      return res.status(403).send({ msg: 'Access forbidden: Administrator only' });
+    }
+    next();
+  };
+  
 
 // Verify Refresh Token Middleware (verify the session)
 let verifySession = (req, res, next) => {
@@ -390,8 +398,25 @@ let deleteTasksFromList = (projectId) => {
 
 app.get('/developers', (req, res) => {
     User.findDevelopers()
-      .then(developers => res.send(developers))
+      .then(developers => 
+        {console.log("Developers found:", developers);
+        res.send(developers);})
       .catch(err => res.status(500).send(err));
+  });
+
+  app.delete('/users/:id', authenticateAdmin, async (req, res) => {
+    try {
+      const userId = req.params.id;
+        const user = await User.findById(userId);
+      if (!user) {
+        return res.status(404).send({ msg: 'User not found' });
+      }
+      // Delete the user
+      await User.findByIdAndDelete(userId);
+      res.status(200).send({ msg: 'User deleted successfully' });
+    } catch (error) {
+      res.status(500).send({ error: 'An error occurred while trying to delete the user' });
+    }
   });
   
 

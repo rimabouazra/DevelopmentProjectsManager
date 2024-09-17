@@ -19,12 +19,14 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
   @override
   void initState() {
     super.initState();
-    final projectModel = Provider.of<ProjectModel>(context, listen: false);
-    final taskModel = Provider.of<TaskModel>(context, listen: false);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final projectModel = Provider.of<ProjectModel>(context, listen: false);
+      final taskModel = Provider.of<TaskModel>(context, listen: false);
 
-    projectModel.fetchProjects().then((_) {
-      final projectIds = projectModel.getProjectIds();
-      taskModel.fetchTasksForAllProjects(projectIds);
+      projectModel.fetchProjects().then((_) {
+        final projectIds = projectModel.getProjectIds();
+        taskModel.fetchTasksForAllProjects(projectIds);
+      });
     });
   }
 
@@ -44,7 +46,7 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
           ),
         ],
       ),
-      body: Consumer2<ProjectModel,TaskModel>(
+      body: Consumer2<ProjectModel, TaskModel>(
         builder: (context, projectModel, model, child) {
           final filteredTasks = widget.projectId != null
               ? model.getTasksByProject(widget.projectId!)
@@ -68,9 +70,17 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
                   .where((task) => showDone ? true : !task.status)
                   .toList();
               final Project? project = projectModel.projects.firstWhere(
-                (proj) => proj.projectId == projectId
+                (proj) => proj.projectId == projectId,
+                orElse: () => Project(
+                  projectId,
+                  'Unknown Project',
+                  'No description available',
+                  [],
+                  [],
+                ),
               );
-              final projectName = project != null ? project.title : 'Unknown Project';
+              final projectName =
+                  project != null ? project.title : 'Unknown Project';
 
               return ExpansionTile(
                 title: Text('Project : $projectName'),
@@ -94,7 +104,8 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
                           value: task.status,
                           onChanged: (bool? value) {
                             setState(() {
-                              model.markAsDone(projectId, projectTasks.indexOf(task));
+                              model.markAsDone(
+                                  projectId, projectTasks.indexOf(task));
                             });
                           },
                         ),
@@ -116,7 +127,11 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
                             IconButton(
                               icon: Icon(Icons.add),
                               onPressed: () {
-                                Navigator.pushNamed(context, 'addSubtask',arguments: task,);
+                                Navigator.pushNamed(
+                                  context,
+                                  'addSubtask',
+                                  arguments: task,
+                                );
                               },
                             ),
                           ],

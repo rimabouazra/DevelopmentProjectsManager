@@ -6,6 +6,7 @@ import 'package:frontend/provider/ProjectModel.dart';
 import 'package:frontend/provider/TaskModel.dart';
 import 'package:frontend/view/AddSubtaskView.dart';
 import 'package:frontend/view/AddTasksView.dart';
+import 'package:frontend/view/EditProjectView.dart';
 import 'package:frontend/view/ListTasksView.dart';
 import 'package:frontend/view/SubtasksView.dart';
 import 'package:frontend/view/createProjectView.dart';
@@ -45,6 +46,7 @@ class MyApp extends StatelessWidget {
       ),
       routes: {
         "ListTasks": (context) => ListTasksView(),
+        "EditProject": (context) => EditProjectView(projectId: ModalRoute.of(context)!.settings.arguments as String),
         "addTasks": (context) => AddTasksView(),
         "ListProjects": (context) => ListProjectsWidget(),
         "CreateProject": (context) => CreateProjectView(),

@@ -10,44 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class TaskModel extends ChangeNotifier {
   final Map<String, List<Task>> tasks = {
-    globals.Late: [
-      Task("1", "Task 1", "1", false, "Task's Descriptoion",
-          DateTime.now().add(Duration(days: 1)), [
-        Subtask(id: "1", title: "Subtask 1", isCompleted: false),
-        Subtask(id: "2", title: "Subtask 2", isCompleted: false),
-      ], [
-        "Rima"
-      ])
-    ],
-    globals.today: [
-      Task("2", "Today Task 2", "2", false, "Task's Descriptoion",
-          DateTime.now().add(Duration(days: 1)), [
-        Subtask(id: "3", title: "Subtask 1", isCompleted: false),
-        Subtask(id: "4", title: "Subtask 2", isCompleted: false),
-      ], []),
-      Task("1", "Today Task 2 ", "2", false, "Task's Descriptoion",
-          DateTime.now().add(Duration(days: 1)), [], [])
-    ],
-    globals.tomorrow: [
-      Task("2", "Tomorrow Task 1", "1", false, "Task's Descriptoion",
-          DateTime.now().add(Duration(days: 1)), [], [])
-    ],
-    globals.thisWeek: [
-      Task("2", " thisWeek Task 2", "2", false, "Task's Descriptoion",
-          DateTime.now().add(Duration(days: 1)), [], [])
-    ],
-    globals.nextWeek: [
-      Task("1", "nextWeek Task 1", "1", false, "Task's Descriptoion",
-          DateTime.now().add(Duration(days: 1)), [], [])
-    ],
-    globals.thisMonth: [
-      Task("1", "Task 2", "2", false, "Task's Descriptoion",
-          DateTime.now().add(Duration(days: 1)), [], ["Rima"])
-    ],
-    globals.later: [
-      Task("1", "Task 1", "1", false, "Task's Descriptoion",
-          DateTime.now().add(Duration(days: 1)), [], ["Rima", "Rima"])
-    ],
   };
   Map<String, List<Task>> get items => tasks;
 
@@ -91,6 +53,7 @@ class TaskModel extends ChangeNotifier {
     if (task != null) {
       task.status = !task.status;
       updateTask(task);
+      checkIfAllTasksDone(projectId);
       notifyListeners();
     }
   }
@@ -148,8 +111,7 @@ class TaskModel extends ChangeNotifier {
       print("Error: projectId is empty, cannot fetch tasks.");
       return;
     }
-    if (tasksByProject.containsKey(projectId) &&
-        tasksByProject[projectId]!.isNotEmpty) {
+    if (tasksByProject.containsKey(projectId)) {
       print("Tasks already fetched for project: $projectId");
       return;
     }
@@ -179,11 +141,8 @@ class TaskModel extends ChangeNotifier {
             tasksJson.map((json) => Task.fromJson(json)).toList();
 
         // Add the fetched tasks to the specific project
-        if (!tasksByProject.containsKey(projectId)) {
-          tasksByProject[projectId] = [];
-        }
-        tasksByProject[projectId] = tasks;
-        notifyListeners();
+       tasksByProject[projectId] = tasks.isNotEmpty ? tasks : [];
+       notifyListeners();
       } else {
         print('Failed to fetch tasks: ${response.statusCode}'); // Debugging
         throw Exception('Failed to fetch tasks');
@@ -251,6 +210,10 @@ class TaskModel extends ChangeNotifier {
     }
 
     for (String projectId in projectIds) {
+      if (tasksByProject.containsKey(projectId)) {
+      print("Tasks already fetched for project ID: $projectId");
+      continue;  // Skip fetching if tasks are already available
+      }
       print("Fetching tasks for project ID: $projectId");
 
       try {
@@ -267,11 +230,8 @@ class TaskModel extends ChangeNotifier {
               tasksJson.map((json) => Task.fromJson(json)).toList();
 
           // Add the fetched tasks to the specific project
-          if (!tasksByProject.containsKey(projectId)) {
-            tasksByProject[projectId] = [];
-          }
-          tasksByProject[projectId] = tasks;
-          notifyListeners();
+          tasksByProject[projectId] = tasks.isNotEmpty ? tasks : [];
+        notifyListeners();
         } else {
           print(
               'Failed to fetch tasks for project $projectId: ${response.statusCode}');
@@ -315,7 +275,14 @@ void checkIfAllSubtasksDone(Task task) {
 void checkIfAllTasksDone(String projectId) {
   if (tasksByProject[projectId]?.every((task) => task.status == true) ?? false) {
     print('All tasks in project $projectId are done. Mark the project as complete.');
-    // If you store the project status, you can add logic to update it here.
   }
 }
+
+void removeTasksForProject(String projectId) {
+  if (tasksByProject.containsKey(projectId)) {
+    tasksByProject.remove(projectId);
+    notifyListeners();
+  }
+}
+
 }

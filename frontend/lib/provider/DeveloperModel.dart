@@ -34,6 +34,7 @@ class DeveloperModel extends ChangeNotifier {
 
     _user = User.fromJson(userSubMap);
     print("User role set in setUser method: ${_user.role}");  // Debugging line
+    saveDeveloperToDatabase(_user);
     notifyListeners();
   } else {
     print("No 'user' key found in JSON response");
@@ -59,5 +60,20 @@ class DeveloperModel extends ChangeNotifier {
     throw Exception('Failed to load developers');
   }
 }
+
+void saveDeveloperToDatabase(User developer) async {
+  final response = await http.post(
+    Uri.parse('http://localhost:3000/developers'),
+    headers: {'Content-Type': 'application/json'},
+    body: json.encode(developer.toJson()),
+  );
+
+  if (response.statusCode == 200 || response.statusCode == 201) {
+    print("Developer saved to database");
+  } else {
+    print("Failed to save developer to database");
+  }
+}
+
 
 }

@@ -7,7 +7,6 @@ import 'package:provider/provider.dart';
 
 class EditProjectView extends StatefulWidget {
   final String projectId;
-
   const EditProjectView({Key? key, required this.projectId}) : super(key: key);
 
   @override
@@ -16,10 +15,10 @@ class EditProjectView extends StatefulWidget {
 
 class _EditProjectViewState extends State<EditProjectView> {
   final _formKey = GlobalKey<FormState>();
-  late String _title;
-  late String _description;
+  String _title = '';
+  String _description = '';
   List<User> _developers = [];
-   List<User> availableDevelopers = [];
+  List<User> availableDevelopers = [];
   bool isLoading = true;
 
   @override
@@ -31,13 +30,13 @@ class _EditProjectViewState extends State<EditProjectView> {
 
   Future<void> _fetchProjectDetails() async {
     final projectModel = Provider.of<ProjectModel>(context, listen: false);
-    final project = projectModel.projects
+    final project = await projectModel.projects
         .firstWhere((proj) => proj.projectId == widget.projectId);
 
     setState(() {
       _title = project.title;
       _description = project.description;
-      _developers = project.developers;
+      _developers = project.developers ?? [];
       isLoading = false;
     });
   }

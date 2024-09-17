@@ -145,6 +145,22 @@ UserSchema.statics.hasRefreshTokenExpired = (expiresAt) => {
   return expiresAt <= secondsSinceEpoch;
 }
 
+UserSchema.statics.deleteUserById = function (userId) {
+  const User = this;
+
+  return User.findByIdAndDelete(userId)
+    .then((deletedUser) => {
+      if (!deletedUser) {
+        return Promise.reject({ msg: 'User not found' });
+      }
+      return deletedUser;
+    })
+    .catch((error) => {
+      return Promise.reject(error);
+    });
+};
+
+
 // Middleware
 UserSchema.pre('save', function (next) {
   let user = this;
