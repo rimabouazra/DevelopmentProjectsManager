@@ -3,7 +3,9 @@ import 'package:frontend/model/Subtask.dart';
 class Task {
   String? id;
   String title;
-  String projectId; 
+  String projectId;
+  bool isToDo = true;
+  bool isInProgress = false; 
   bool status=false;
   String description;
   DateTime deadline;
@@ -29,6 +31,16 @@ class Task {
     if (subtasks.every((subtask) => subtask.isCompleted)) {
       status = true;
     }
+  }
+
+  void markAsInProgress() {
+    isToDo = false;
+    isInProgress = true;
+  }
+
+  void markAsCompleted() {
+    isInProgress = false;
+    status = true;
   }
 
    factory Task.fromJson(Map<String, dynamic> json) {

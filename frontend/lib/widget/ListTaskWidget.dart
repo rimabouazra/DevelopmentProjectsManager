@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/model/Project.dart';
+import 'package:frontend/provider/NotificationModel.dart';
 import 'package:frontend/provider/ProjectModel.dart';
 import 'package:frontend/provider/TaskModel.dart';
 import 'package:frontend/view/SubtasksView.dart';
 import 'package:provider/provider.dart';
+import 'package:frontend/model/Notification.dart' as CustomNotification;
+import 'package:frontend/provider/DeveloperModel.dart';
 
 class ListTasksWidget extends StatefulWidget {
   final String? projectId;
@@ -32,6 +35,7 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
 
   @override
   Widget build(BuildContext context) {
+    final userId = Provider.of<DeveloperModel>(context, listen: false).user.idUtilisateur;
     return Scaffold(
       appBar: AppBar(
         title: Text('Tasks'),
@@ -106,32 +110,122 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
                             setState(() {
                               model.markAsDone(
                                   projectId, projectTasks.indexOf(task));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                    content: Text(
+                                        'Task "${task.title}" marked as Completed')),
+                              );
                             });
                           },
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // To-Do button
                             IconButton(
                               onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) =>
-                                        SubtasksView(task: task),
-                                  ),
-                                );
+                                setState(() {
+                                  task.isToDo = true;
+                                  task.isInProgress = false;
+                                  task.status = false;
+                                  model.updateTask(task);
+
+                                  CustomNotification.Notification newNotification = CustomNotification.Notification(
+                                    id: UniqueKey().toString(),
+                                    message:
+                                        'Task "${task.title}" marked as To-Do',
+                                    userId:
+                                        userId, 
+                                    timestamp: DateTime.now(),
+                                  );
+                                   Provider.of<NotificationModel>(context,
+                                          listen: false)
+                                      .addNotification(
+                                          userId,
+                                          'Task "${task.title}" marked as To-Do');
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            'Task "${task.title}" marked as To-Do')),
+                                  );
+                                });
                               },
-                              icon: Icon(Icons.subdirectory_arrow_right),
+                              icon: Icon(Icons.assignment_late,
+                                  color: task.isToDo
+                                      ? Colors.orange
+                                      : Colors.grey),
                             ),
+
+                            // In Progress button
                             IconButton(
-                              icon: Icon(Icons.add),
                               onPressed: () {
-                                Navigator.pushNamed(
-                                  context,
-                                  'addSubtask',
-                                  arguments: task,
-                                );
+                                setState(() {
+                                  task.isToDo = false;
+                                  task.isInProgress = true;
+                                  task.status = false;
+                                  model.updateTask(task);
+
+                                  // Create a notification for In Progress status
+                                  CustomNotification.Notification newNotification = CustomNotification.Notification(
+                                    id: UniqueKey().toString(),
+                                    message:
+                                        'Task "${task.title}" is In Progress',
+                                    userId:
+                                        userId, 
+                                    timestamp: DateTime.now(),
+                                  );
+                                   Provider.of<NotificationModel>(context,
+                                          listen: false)
+                                      .addNotification(
+                                          userId,
+                                          'Task "${task.title}" marked as To-Do');
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            'Task "${task.title}" is In Progress')),
+                                  );
+                                });
+                              },
+                              icon: Icon(Icons.play_circle_fill,
+                                  color: task.isInProgress
+                                      ? Colors.orange
+                                      : Colors.grey),
+                            ),
+
+                            // Completed button
+                            IconButton(
+                              icon: Icon(Icons.check_circle,
+                                  color:
+                                      task.status ? Colors.green : Colors.grey),
+                              onPressed: () {
+                                setState(() {
+                                  task.isToDo = false;
+                                  task.isInProgress = false;
+                                  task.status = true;
+                                  model.updateTask(task);
+
+                                  // Create a notification for Completed status
+                                  CustomNotification.Notification newNotification = CustomNotification.Notification(
+                                    id: UniqueKey().toString(),
+                                    message: 'Task "${task.title}" completed',
+                                    userId:
+                                        userId, 
+                                    timestamp: DateTime.now(),
+                                  );
+                                   Provider.of<NotificationModel>(context,
+                                          listen: false)
+                                      .addNotification(
+                                          userId, 
+                                          'Task "${task.title}" marked as To-Do');
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                        content: Text(
+                                            'Task "${task.title}" completed')),
+                                  );
+                                });
                               },
                             ),
                           ],

@@ -419,7 +419,19 @@ app.get('/developers', (req, res) => {
     }
   });
   
-
+app.post('/notifications', (req, res) => {
+    const newNotification = new Notification(req.body);
+    newNotification.save()
+      .then(() => res.status(201).send(newNotification))
+      .catch(err => res.status(500).send(err));
+  });
+  
+app.get('/notifications/:userId', (req, res) => {
+    Notification.find({ userId: req.params.userId })
+      .then(notifications => res.send(notifications))
+      .catch(err => res.status(500).send(err));
+  });
+  
 app.listen(3000, () => {
     console.log("Server is running on port 3000!");
   });

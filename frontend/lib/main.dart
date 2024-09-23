@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:frontend/model/Task.dart';
 import 'package:frontend/model/User.dart';
 import 'package:frontend/provider/DeveloperModel.dart';
+import 'package:frontend/provider/NotificationModel.dart';
 import 'package:frontend/provider/ProjectModel.dart';
 import 'package:frontend/provider/TaskModel.dart';
 import 'package:frontend/view/AddSubtaskView.dart';
@@ -19,6 +20,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => TaskModel()),
+         ChangeNotifierProvider(create: (_) => NotificationModel()),
         ChangeNotifierProvider(create: (_) => ProjectModel()),
         ChangeNotifierProvider(create: (_) => DeveloperModel()),
         ChangeNotifierProvider(create: (_) => User(
