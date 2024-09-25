@@ -35,7 +35,7 @@ class HomePage extends StatelessWidget {
               icon: Icon(Icons.add_box),
               label: Text('Request to Create Project'),
               onPressed: () {
-                Navigator.pushNamed(context, '/createProjectView');
+                Navigator.pushNamed(context, 'CreateProject');
               },
             ),
             SizedBox(height: 20),
@@ -44,7 +44,7 @@ class HomePage extends StatelessWidget {
               icon: Icon(Icons.dashboard),
               label: Text('Project Dashboard'),
               onPressed: () {
-                Navigator.pushNamed(context, '/dashboardView');
+                Navigator.pushNamed(context, 'dashboardView');
               },
             ),
           ],

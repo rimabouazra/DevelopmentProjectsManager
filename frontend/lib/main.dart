@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
       ),
       routes: {
         "ListTasks": (context) => ListTasksView(),
-        "approvalList": (context) => ApprovalListView(),
+        "/approvalList": (context) => ApprovalListView(),
         "dashboardView": (context) => DashboardView(),
         "EditProject": (context) => EditProjectView(projectId: ModalRoute.of(context)!.settings.arguments as String),
         "addTasks": (context) => AddTasksView(),

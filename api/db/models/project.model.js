@@ -34,7 +34,12 @@ const ProjectSchema = new mongoose.Schema({
 createdAt: {
   type: Date,
   default: Date.now
-}
+},
+status: {
+  type: String,
+  enum: ['assigned', 'in-progress', 'completed'],
+  default: 'assigned',
+},
 });
 
 const Project = mongoose.model('Project', ProjectSchema);

@@ -17,12 +17,14 @@ class _CreateProjectViewState extends State<CreateProjectView> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   List<User> _selectedDevelopers = [];
+  List<User> managers = [];
   User? _selectedManager;
 
   @override
   void initState() {
     super.initState();
     _fetchDevelopers();
+    _fetchManagers();
   }
 
   Future<void> _fetchDevelopers() async {
@@ -34,6 +36,20 @@ class _CreateProjectViewState extends State<CreateProjectView> {
       print('Failed to fetch developers: $e');
     }
   }
+  Future<void> _fetchManagers() async {
+  try {
+    await Provider.of<DeveloperModel>(context, listen: false).fetchManagers();
+    final developerModel = Provider.of<DeveloperModel>(context, listen: false);
+    print("Managers fetched: ${developerModel.managers.map((e) => e.nomUtilisateur).toList()}"); // Debugging line
+    setState(() {
+      managers = developerModel.managers
+          .where((user) => user.role == Role.Manager)
+          .toList();
+    });
+  } catch (e) {
+    print('Failed to fetch managers: $e');
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -68,8 +84,7 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                 Text('Select a Manager for the Project'),
                 DropdownButtonFormField<User>(
                   value: _selectedManager,
-                  items: developerModel.developers
-                      .where((user) => user.role == Role.Manager)
+                  items: managers
                       .map((User manager) {
                     return DropdownMenuItem<User>(
                       value: manager,

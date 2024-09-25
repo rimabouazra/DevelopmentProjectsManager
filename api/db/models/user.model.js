@@ -37,6 +37,10 @@ const UserSchema = new mongoose.Schema({
     enum: ['developer', 'manager', 'administrator'], 
     required: true 
   },
+  isApproved: {
+    type: Boolean,
+    default: false, 
+  },
   sessions: [{
     token: {
       type: String,
@@ -159,8 +163,12 @@ UserSchema.statics.deleteUserById = function (userId) {
       return Promise.reject(error);
     });
 };
-
-
+UserSchema.statics.findManagers = function() {
+  return this.find({ role: 'manager' }).select('name email role');
+};
+UserSchema.statics.findPendingUsers = function() {
+  return this.find({ isApproved: false }).select('name email role');
+};
 // Middleware
 UserSchema.pre('save', function (next) {
   let user = this;

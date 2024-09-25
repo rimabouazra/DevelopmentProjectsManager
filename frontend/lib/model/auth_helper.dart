@@ -5,6 +5,7 @@ import 'package:frontend/model/User.dart';
 import 'package:frontend/provider/DeveloperModel.dart';
 import 'package:frontend/view/ListTasksView.dart';
 import 'package:frontend/view/signUpPage.dart';
+import 'package:frontend/widget/HomePage.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
@@ -150,15 +151,23 @@ class AuthHelper {
               'x-access-token', token);
 
           saveTokens(accessToken,refreshToken);
+           String userRole = userProvider.user.role.toString();
+            print("User logged in with role: $userRole");
+
+        if (userRole == 'Role.Administrator') {
           navigator.pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (context) => ListTasksView(),
-            ),
+            MaterialPageRoute(builder: (context) => HomePage(user: userProvider.user)),
             (route) => false,
           );
-        },
-      );
-    } catch (e) {
+        } else {
+          navigator.pushAndRemoveUntil(
+            MaterialPageRoute(builder: (context) => ListTasksView()),
+            (route) => false,
+          );
+        }
+      },
+    );
+  } catch (e) {
       showSnackBar(context, e.toString());
     }
   }

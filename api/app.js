@@ -38,18 +38,39 @@ let authenticate = (req, res, next) => {
       }
       console.log('Decoded token:', decoded);
       req.user_id = decoded._id;
-      next();
+      User.findById(req.user_id).then((user) => {
+        if (!user) {
+          return res.status(404).send({ msg: 'User not found' });
+        }
+        req.user = user;
+        next();
+      }).catch((error) => {
+        res.status(500).send({ msg: 'Failed to fetch user details' });
+      });
     });
   };
   
   const authenticateAdmin = (req, res, next) => {
-    const { role } = req.user; // Assuming req.user contains the signed-in user's info
+    const token = req.header('x-access-token');
+    console.log(`Token received: ${token}`);
   
-    if (role !== 'administrator') {
-      return res.status(403).send({ msg: 'Access forbidden: Administrator only' });
+    if (!token) {
+      return res.status(401).send({ error: 'No token provided' });
     }
-    next();
+  
+    jwt.verify(token, User.getJWTSecret(), (err, decoded) => {
+      if (err) {
+        return res.status(401).send({ error: 'Invalid token' });
+      } else if (decoded.role !== 'administrator') {
+        return res.status(403).send({ error: 'Unauthorized role' });
+      }
+  
+      req.user_id = decoded._id;
+      req.role = decoded.role;
+      next();
+    });
   };
+  
   
 
 // Verify Refresh Token Middleware (verify the session)
@@ -447,12 +468,28 @@ app.get('/notifications/:userId', (req, res) => {
 
 app.get('/users/pending-approval', authenticateAdmin, async (req, res) => {
     try {
-      const pendingUsers = await User.find({ status: 'pending' });
+      const pendingUsers = await User.findPendingUsers();
       res.status(200).send(pendingUsers);
     } catch (e) {
       res.status(500).send({ msg: 'Error fetching pending users' });
     }
 });
+
+app.patch('/users/approve/:userId', authenticateAdmin, async (req, res) => {
+    try {
+      const userId = req.params.userId;
+      const updatedUser = await User.findByIdAndUpdate(userId, { isApproved: true }, { new: true });
+  
+      if (!updatedUser) {
+        return res.status(404).send({ msg: 'User not found' });
+      }
+  
+      res.status(200).send({ msg: 'User approved', user: updatedUser });
+    } catch (error) {
+      res.status(500).send({ msg: 'Error approving user' });
+    }
+  });
+  
 
 app.post('/projects/request', authenticate, async (req, res) => {
     try {
@@ -488,6 +525,15 @@ app.get('/dashboard/projects', authenticateAdmin, async (req, res) => {
     }
   });
   
+app.get('/managers', async (req, res) => {
+    try {
+        const managers = await User.find({ role: 'manager' }).select('name email');
+        res.status(200).send(managers);
+      } catch (error) {
+        res.status(500).send({ msg: 'Error fetching managers' });
+      }
+});
+
   
 app.listen(3000, () => {
     console.log("Server is running on port 3000!");

@@ -18,7 +18,8 @@ class DeveloperModel extends ChangeNotifier {
   User get user => _user;
 
    List<User> _developers = [];
-
+  List<User> _managers = [];
+  List<User> get managers => _managers;
   List<User> get developers => _developers;
 
   void setUser(String userJson) {
@@ -59,6 +60,17 @@ class DeveloperModel extends ChangeNotifier {
   } else {
     throw Exception('Failed to load developers');
   }
+}
+
+Future<void> fetchManagers() async {
+    final response = await http.get(Uri.parse('http://localhost:3000/managers'));
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as List<dynamic>;
+      _managers = data.map((json) => User.fromJson(json)).toList();
+      notifyListeners();
+    } else {
+      throw Exception('Failed to load managers');
+    }
 }
 
 void saveDeveloperToDatabase(User developer) async {
