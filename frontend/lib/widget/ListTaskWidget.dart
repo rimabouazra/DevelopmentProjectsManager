@@ -35,7 +35,8 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final userId = Provider.of<DeveloperModel>(context, listen: false).user.idUtilisateur;
+    final userId =
+        Provider.of<DeveloperModel>(context, listen: false).user.idUtilisateur;
     return Scaffold(
       appBar: AppBar(
         title: Text('Tasks'),
@@ -75,13 +76,8 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
                   .toList();
               final Project? project = projectModel.projects.firstWhere(
                 (proj) => proj.projectId == projectId,
-                orElse: () => Project(
-                  projectId,
-                  'Unknown Project',
-                  'No description available',
-                  [],
-                  [],
-                ),
+                orElse: () => Project(projectId, 'Unknown Project',
+                    'No description available', [], [], null),
               );
               final projectName =
                   project != null ? project.title : 'Unknown Project';
@@ -130,18 +126,18 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
                                   task.status = false;
                                   model.updateTask(task);
 
-                                  CustomNotification.Notification newNotification = CustomNotification.Notification(
+                                  CustomNotification.Notification
+                                      newNotification =
+                                      CustomNotification.Notification(
                                     id: UniqueKey().toString(),
                                     message:
                                         'Task "${task.title}" marked as To-Do',
-                                    userId:
-                                        userId, 
+                                    userId: userId,
                                     timestamp: DateTime.now(),
                                   );
-                                   Provider.of<NotificationModel>(context,
+                                  Provider.of<NotificationModel>(context,
                                           listen: false)
-                                      .addNotification(
-                                          userId,
+                                      .addNotification(userId,
                                           'Task "${task.title}" marked as To-Do');
 
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -167,18 +163,18 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
                                   model.updateTask(task);
 
                                   // Create a notification for In Progress status
-                                  CustomNotification.Notification newNotification = CustomNotification.Notification(
+                                  CustomNotification.Notification
+                                      newNotification =
+                                      CustomNotification.Notification(
                                     id: UniqueKey().toString(),
                                     message:
                                         'Task "${task.title}" is In Progress',
-                                    userId:
-                                        userId, 
+                                    userId: userId,
                                     timestamp: DateTime.now(),
                                   );
-                                   Provider.of<NotificationModel>(context,
+                                  Provider.of<NotificationModel>(context,
                                           listen: false)
-                                      .addNotification(
-                                          userId,
+                                      .addNotification(userId,
                                           'Task "${task.title}" marked as To-Do');
 
                                   ScaffoldMessenger.of(context).showSnackBar(
@@ -207,17 +203,17 @@ class _ListTasksWidgetState extends State<ListTasksWidget> {
                                   model.updateTask(task);
 
                                   // Create a notification for Completed status
-                                  CustomNotification.Notification newNotification = CustomNotification.Notification(
+                                  CustomNotification.Notification
+                                      newNotification =
+                                      CustomNotification.Notification(
                                     id: UniqueKey().toString(),
                                     message: 'Task "${task.title}" completed',
-                                    userId:
-                                        userId, 
+                                    userId: userId,
                                     timestamp: DateTime.now(),
                                   );
-                                   Provider.of<NotificationModel>(context,
+                                  Provider.of<NotificationModel>(context,
                                           listen: false)
-                                      .addNotification(
-                                          userId, 
+                                      .addNotification(userId,
                                           'Task "${task.title}" marked as To-Do');
 
                                   ScaffoldMessenger.of(context).showSnackBar(

@@ -21,6 +21,11 @@ const ProjectSchema = new mongoose.Schema({
     type: mongoose.Types.ObjectId, 
     ref: 'User' // References developers
   }],
+  manager: {
+    type: mongoose.Types.ObjectId,
+    ref: 'User',
+    required: true,
+  },
    // with auth
    _userId: {
     type: mongoose.Types.ObjectId,

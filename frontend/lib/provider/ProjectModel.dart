@@ -23,7 +23,7 @@ class ProjectModel extends ChangeNotifier {
         .tasks;
   }
 
-  Future<void> addProject(Project project, User user) async {
+  Future<void> addProject(Project project, User user, User? selectedManager) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('x-access-token');
 
@@ -50,6 +50,7 @@ class ProjectModel extends ChangeNotifier {
                 "tasks": project.tasks.isNotEmpty ? project.tasks : [],
                 "developers":
                     project.developers.map((dev) => dev.toJson()).toList(),
+                "managerId": selectedManager != null ? selectedManager.idUtilisateur : null,
               }),
         );
         print("Response status: ${response.statusCode}");

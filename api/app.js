@@ -113,9 +113,22 @@ app.get('/projects', authenticate, async (req, res) => {
         if (!user || !user.canCreateProject()) {
             return res.status(403).send({ message: 'User does not have the permission to create projects' });
         }
+        const { title, description, developers, managerId } = req.body;
+
+        // If the user is an administrator, ensure a manager is assigned
+        let manager = null;
+        if (managerId) {
+            manager = await User.findById(managerId);
+            if (!manager || manager.role !== 'manager') {
+                return res.status(400).send({ message: 'Invalid manager selected' });
+            }
+        }
 
         let newProject = new Project({
-            title: req.body.title,
+            title,
+            description,
+            developers,
+            manager: manager ? manager._id : user._id, 
             _userId: req.user_id
         });
 
@@ -431,6 +444,50 @@ app.get('/notifications/:userId', (req, res) => {
       .then(notifications => res.send(notifications))
       .catch(err => res.status(500).send(err));
   });
+
+app.get('/users/pending-approval', authenticateAdmin, async (req, res) => {
+    try {
+      const pendingUsers = await User.find({ status: 'pending' });
+      res.status(200).send(pendingUsers);
+    } catch (e) {
+      res.status(500).send({ msg: 'Error fetching pending users' });
+    }
+});
+
+app.post('/projects/request', authenticate, async (req, res) => {
+    try {
+      const { managerId, title, description } = req.body;
+      const manager = await User.findById(managerId);
+      
+      if (!manager || manager.role !== 'manager') {
+        return res.status(400).send({ msg: 'Invalid manager selected' });
+      }
+  
+      const newProjectRequest = new ProjectRequest({
+        managerId,
+        title,
+        description,
+        status: 'pending',
+      });
+  
+      await newProjectRequest.save();
+      res.status(201).send({ msg: 'Project request sent' });
+    } catch (error) {
+      res.status(500).send({ msg: 'Error sending project request' });
+    }
+});
+  
+app.get('/dashboard/projects', authenticateAdmin, async (req, res) => {
+    try {
+      const projects = await Project.aggregate([
+        { $group: { _id: '$status', count: { $sum: 1 } } }
+      ]);
+      res.status(200).send(projects);
+    } catch (error) {
+      res.status(500).send({ msg: 'Error fetching project dashboard' });
+    }
+  });
+  
   
 app.listen(3000, () => {
     console.log("Server is running on port 3000!");

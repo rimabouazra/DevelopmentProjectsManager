@@ -17,6 +17,7 @@ class _CreateProjectViewState extends State<CreateProjectView> {
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
   List<User> _selectedDevelopers = [];
+  User? _selectedManager;
 
   @override
   void initState() {
@@ -63,6 +64,31 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                 decoration: InputDecoration(labelText: 'Description'),
               ),
               SizedBox(height: 16.0),
+              if (currentUser.role == Role.Administrator) ...[
+                Text('Select a Manager for the Project'),
+                DropdownButtonFormField<User>(
+                  value: _selectedManager,
+                  items: developerModel.developers
+                      .where((user) => user.role == Role.Manager)
+                      .map((User manager) {
+                    return DropdownMenuItem<User>(
+                      value: manager,
+                      child: Text(manager.nomUtilisateur),
+                    );
+                  }).toList(),
+                  onChanged: (User? newManager) {
+                    setState(() {
+                      _selectedManager = newManager;
+                    });
+                  },
+                  validator: (value) {
+                    if (value == null) {
+                      return 'Please select a manager';
+                    }
+                    return null;
+                  },
+                ),
+              ],
               Expanded(
                 child: ListView(
                   children: developerModel.developers.map((developer) {
@@ -96,12 +122,14 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                   if (_formKey.currentState?.validate() ?? false) {
                     _formKey.currentState!.save();
                     final newProject = Project(
-                      '',
-                      _titleController.text,
-                      _descriptionController.text,
-                      [],
-                      _selectedDevelopers.isNotEmpty ? _selectedDevelopers : [],
-                    );
+                        '',
+                        _titleController.text,
+                        _descriptionController.text,
+                        [],
+                        _selectedDevelopers.isNotEmpty
+                            ? _selectedDevelopers
+                            : [],
+                        null);
                     final currentUser =
                         Provider.of<DeveloperModel>(context, listen: false)
                             .user;
@@ -114,8 +142,10 @@ class _CreateProjectViewState extends State<CreateProjectView> {
                         print("Selected developers: $_selectedDevelopers");
 
                         await Provider.of<ProjectModel>(context, listen: false)
-                            .addProject(newProject, currentUser);
-                        await Provider.of<ProjectModel>(context, listen: false).fetchProjects();
+                            .addProject(
+                                newProject, currentUser, _selectedManager);
+                        await Provider.of<ProjectModel>(context, listen: false)
+                            .fetchProjects();
                         Navigator.pop(context);
                       } catch (e) {
                         if (e.toString().contains('Failed to create project')) {

@@ -41,7 +41,7 @@ class _AddTasksViewState extends State<AddTasksView> {
         setState(() {
           _selectedProject = projectModel.allProjects.firstWhere(
             (project) => project.projectId == widget.projectId,
-            orElse: () => Project('', 'No Project', 'No Description', [], []),
+            orElse: () => Project('', 'No Project', 'No Description', [], [], null),
           );
           print('Selected project ID: ${_selectedProject?.projectId}');
         });
@@ -63,7 +63,7 @@ class _AddTasksViewState extends State<AddTasksView> {
       if (widget.projectId != null&& _selectedProject == null) {
         _selectedProject = projectModel.projects.firstWhere(
           (project) => project.projectId == widget.projectId,
-          orElse: () => Project('', 'No Project', 'No Description', [], []),
+          orElse: () => Project('', 'No Project', 'No Description', [], [], null),
         );
         print('Selected project ID: ${_selectedProject?.projectId}');
       }

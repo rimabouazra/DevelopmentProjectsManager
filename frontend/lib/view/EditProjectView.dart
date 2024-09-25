@@ -40,42 +40,38 @@ class _EditProjectViewState extends State<EditProjectView> {
       isLoading = false;
     });
   }
- Future<void> _fetchAvailableDevelopers() async {
+
+  Future<void> _fetchAvailableDevelopers() async {
     final developerModel = Provider.of<DeveloperModel>(context, listen: false);
-    await developerModel.fetchDevelopers();  
+    await developerModel.fetchDevelopers();
     setState(() {
       availableDevelopers = developerModel.developers;
     });
   }
 
   Future<void> _updateProject() async {
-  if (_formKey.currentState!.validate()) {
-    _formKey.currentState!.save();
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
 
-    final projectModel = Provider.of<ProjectModel>(context, listen: false);
-    Project updatedProject = Project(
-      widget.projectId, 
-      _title,
-      _description,
-      [],
-      _developers,
-    );
+      final projectModel = Provider.of<ProjectModel>(context, listen: false);
+      Project updatedProject = Project(
+          widget.projectId, _title, _description, [], _developers, null);
 
-    try {
-      await projectModel.updateProject(updatedProject);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Project updated successfully')),
-      );
-      Navigator.pop(context);
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to update project: $e')),
-      );
+      try {
+        await projectModel.updateProject(updatedProject);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Project updated successfully')),
+        );
+        Navigator.pop(context);
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to update project: $e')),
+        );
+      }
     }
   }
-}
 
-   void _toggleDeveloper(User developer) {
+  void _toggleDeveloper(User developer) {
     setState(() {
       if (_developers.contains(developer)) {
         _developers.remove(developer);
