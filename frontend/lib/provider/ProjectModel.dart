@@ -1,6 +1,6 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
+import 'package:frontend/config/app_config.dart';
 import 'package:frontend/model/Project.dart';
 import 'package:frontend/model/Task.dart';
 import 'package:frontend/model/User.dart';
@@ -13,7 +13,7 @@ class ProjectModel extends ChangeNotifier {
   List<Project> projects = [];
 
   bool isLoading = false;
-  String errorMessage = ''; 
+  String errorMessage = '';
 
   List<Project> get allProjects => projects;
 
@@ -23,56 +23,61 @@ class ProjectModel extends ChangeNotifier {
         .tasks;
   }
 
-  Future<void> addProject(Project project, User user, User? selectedManager) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('x-access-token');
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('x-access-token');
+  }
 
+  Future<void> addProject(
+      Project project, User user, User? selectedManager) async {
+    final token = await _getToken();
     if (token == null || token.isEmpty) {
-      print("Error: No token available for the user.");
-      throw Exception('Failed to create project: No token provided');
+      throw Exception('Session expirée. Veuillez vous reconnecter.');
     }
-    if (user.canCreateProject()) {
-      try {
-        print("Creating project with token: $token");
-        print("Request body: ${json.encode(project.toJson())}");
+    if (!user.canCreateProject()) {
+      throw Exception("Vous n'avez pas la permission de créer des projets.");
+    }
+    try {
+      print("Creating project with token: $token");
+      print("Request body: ${json.encode(project.toJson())}");
 
-        final response = await http.post(
-          Uri.parse('http://localhost:3000/projects'),
-          headers: {
-            'Content-Type': 'application/json',
-            'x-access-token': token,
-          },
-          body: json.encode(
-              //project.toJson(),
-              {
-                "title": project.title,
-                "description": project.description,
-                "tasks": project.tasks.isNotEmpty ? project.tasks : [],
-                "developers":
-                    project.developers.map((dev) => dev.toJson()).toList(),
-                "managerId": selectedManager != null ? selectedManager.idUtilisateur : null,
-              }),
-        );
-        print("Response status: ${response.statusCode}");
-        print("Response body: ${response.body}");
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          final jsonResponse = json.decode(response.body);
-          if (jsonResponse['tasks'] == null) {
-            jsonResponse['tasks'] = []; 
-          }
-          
-          projects.add(Project.fromJson(json.decode(response.body)));
-          notifyListeners();
-          await fetchProjects();
-        } else {
-          throw Exception('Failed to create project');
+      final response = await http
+          .post(
+            Uri.parse('${AppConfig.baseUrl}/projects'),
+            headers: {
+              'Content-Type': 'application/json',
+              'x-access-token': token,
+            },
+            body: json.encode(
+                //project.toJson(),
+                {
+                  "title": project.title,
+                  "description": project.description,
+                  "tasks": project.tasks.isNotEmpty ? project.tasks : [],
+                  'developers': project.developers
+                      .map((dev) => dev.idUtilisateur)
+                      .where((id) => id.isNotEmpty)
+                      .toList(),
+                  "managerId": selectedManager?.idUtilisateur,
+                }),
+          )
+          .timeout(AppConfig.requestTimeout);
+      print("Response status: ${response.statusCode}");
+      print("Response body: ${response.body}");
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final jsonResponse = json.decode(response.body);
+        if (jsonResponse['tasks'] == null) {
+          jsonResponse['tasks'] = [];
         }
-      } catch (e) {
-        throw Exception('Failed to create project: $e');
+
+        projects.add(Project.fromJson(json.decode(response.body)));
+        notifyListeners();
+        await fetchProjects();
+      } else {
+        throw Exception('Failed to create project');
       }
-    } else {
-      print("User does not have permission to create projects.");
-      throw Exception("User does not have permission to create projects.");
+    } catch (e) {
+      throw Exception('Failed to create project: $e');
     }
   }
 
@@ -82,110 +87,98 @@ class ProjectModel extends ChangeNotifier {
   }
 
   Future<void> fetchProjects() async {
-     isLoading = true; 
-    errorMessage = ''; 
+    isLoading = true;
+    errorMessage = '';
     notifyListeners();
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('x-access-token');
-
-    if (token == null || token.isEmpty) {
-      print("Error: No access token found.");
-      return;
-    }
-    final url = 'http://localhost:3000/projects';
 
     try {
+      final token = await _getToken();
+      if (token == null || token.isEmpty) {
+        errorMessage = 'Session expirée. Veuillez vous reconnecter.';
+        return;
+      }
+
       final response = await http.get(
-        Uri.parse(url),
-        headers: {
-          'x-access-token': token,
-        },
-      );
+        Uri.parse('${AppConfig.baseUrl}/projects'),
+        headers: {'x-access-token': token},
+      ).timeout(AppConfig.requestTimeout);
 
       if (response.statusCode == 200) {
         final List<dynamic> projectList = json.decode(response.body);
         if (projectList.isEmpty) {
-          errorMessage = "No projects found.";
-          print("No projects found"); // Debugging
-          return;
+          errorMessage = 'Aucun projet trouvé.';
+          projects = [];
+        } else {
+          projects = projectList.map((j) => Project.fromJson(j)).toList();
         }
-        print('Raw project JSON: $projectList'); // Debugging
-
-        projects = projectList.map((json) => Project.fromJson(json)).toList();
-        print('Parsed projects: ${projects.length}');// Debugging
         notifyListeners();
+      } else if (response.statusCode == 401) {
+        errorMessage = 'Session expirée. Veuillez vous reconnecter.';
       } else {
-        errorMessage = 'Failed to load projects. Status: ${response.statusCode}';
-        throw Exception('Failed to load projects');
+        errorMessage = 'Erreur lors du chargement des projets.';
       }
-    } catch (error) {
-      throw Exception('Failed to fetch projects: $error');
+    } catch (e) {
+      errorMessage = 'Impossible de contacter le serveur.';
     } finally {
-      isLoading = false;  // Stop loading
+      isLoading = false;
+      notifyListeners();
     }
   }
 
   List<String> getProjectIds() {
-  return projects.map((project) => project.projectId).toList();
-}
-
-Future<void> deleteProject(String projectId) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('x-access-token');
-
-  if (token == null || token.isEmpty) {
-    print("Error: No access token found.");
-    errorMessage = "No access token found.";
-    notifyListeners();
-    return;
+    return projects.map((project) => project.projectId).toList();
   }
 
-  final response = await http.delete(
-    Uri.parse('http://localhost:3000/projects/$projectId'),
-    headers: {
-      'x-access-token': token,
-    },
-  );
-
-  if (response.statusCode == 200) {
-    projects.removeWhere((project) => project.projectId == projectId);
-    notifyListeners();
-  } else {
-    throw Exception('Failed to delete project');
-  }
-}
-
-Future<void> updateProject(Project project) async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  final token = prefs.getString('x-access-token');
-
-  if (token == null || token.isEmpty) {
-    print("Error: No access token found.");
-    return;
-  }
-
-  final response = await http.patch(
-    Uri.parse('http://localhost:3000/projects/${project.projectId}'),
-    headers: {
-      'Content-Type': 'application/json',
-      'x-access-token': token,
-    },
-    body: json.encode({
-      'title': project.title,
-      'description': project.description,
-    }),
-  );
-
-  if (response.statusCode == 200) {
-    final index = projects.indexWhere((p) => p.projectId == project.projectId);
-    if (index != -1) {
-      projects[index] = project;
-      notifyListeners();
+  Future<void> deleteProject(String projectId) async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Session expirée.');
     }
-  } else {
-    throw Exception('Failed to update project');
+
+    final response = await http.delete(
+      Uri.parse('${AppConfig.baseUrl}/projects/$projectId'),
+      headers: {'x-access-token': token},
+    ).timeout(AppConfig.requestTimeout);
+
+    if (response.statusCode == 200) {
+      projects.removeWhere((p) => p.projectId == projectId);
+      notifyListeners();
+    } else {
+      throw Exception('Erreur lors de la suppression du projet');
+    }
   }
-}
 
+  Future<void> updateProject(Project project) async {
+    final token = await _getToken();
+    if (token == null || token.isEmpty) {
+      throw Exception('Session expirée.');
+    }
 
+    final response = await http
+        .patch(
+          Uri.parse('${AppConfig.baseUrl}/projects/${project.projectId}'),
+          headers: {
+            'Content-Type': 'application/json',
+            'x-access-token': token,
+          },
+          body: json.encode({
+            'title': project.title,
+            'description': project.description,
+            'developers':
+                project.developers.map((d) => d.idUtilisateur).toList(),
+          }),
+        )
+        .timeout(AppConfig.requestTimeout);
+
+    if (response.statusCode == 200) {
+      final index =
+          projects.indexWhere((p) => p.projectId == project.projectId);
+      if (index != -1) {
+        projects[index] = project;
+        notifyListeners();
+      }
+    } else {
+      throw Exception('Erreur lors de la mise à jour du projet');
+    }
+  }
 }

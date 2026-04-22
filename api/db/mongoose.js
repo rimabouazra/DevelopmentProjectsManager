@@ -1,15 +1,27 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+  console.error('ERREUR: MONGODB_URI manquant dans le fichier .env');
+  process.exit(1);
+}
+
 mongoose.Promise = global.Promise;
-mongoose.connect('mongodb://localhost:27017/SoftwareDevelopmentProjectsManager', { useNewUrlParser: true, useUnifiedTopology: true })
+
+mongoose.connect(MONGODB_URI)
   .then(() => {
-    console.log('Connected to MongoDB successfully :)');
+    console.log('Connecté à MongoDB avec succès :)');
   })
   .catch((e) => {
-    console.log('Error while attempting to connect to MongoDB :( ');
-    console.log(e);
+    console.error('Erreur de connexion à MongoDB :(');
+    console.error(e);
+    process.exit(1);
   });
 
-  module.exports = {
-    mongoose
-  };
+mongoose.connection.on('disconnected', () => {
+  console.warn('MongoDB déconnecté. Tentative de reconnexion...');
+});
+
+module.exports = { mongoose };

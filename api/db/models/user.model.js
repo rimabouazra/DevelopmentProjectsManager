@@ -1,10 +1,15 @@
+require('dotenv').config();
 const mongoose = require('mongoose');
 const _ = require('lodash');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const bcrypt = require('bcryptjs');
 
-const jwtSecret = "42078558166243957505uefkfjza8474524076";
+const jwtSecret = process.env.JWT_SECRET;
+if (!jwtSecret) {
+  console.error('ERREUR: JWT_SECRET manquant dans le fichier .env');
+  process.exit(1);
+}
 
 const UserSchema = new mongoose.Schema({
   name: {
@@ -64,7 +69,7 @@ UserSchema.methods.generateAccessAuthToken = function() {
   const user = this;
   return new Promise((resolve, reject) => {
     jwt.sign(
-      { _id: user._id.toHexString() },
+      { _id: user._id.toHexString(), role: user.role },
       jwtSecret,
       { expiresIn: "15m" },
       (err, token) => {
@@ -127,7 +132,7 @@ UserSchema.statics.findByIdAndToken = function(_id, token) {
 UserSchema.statics.findByCredentials = function (email, password) {
   let User = this;
   return User.findOne({ email }).then((user) => {
-      if (!user) return Promise.reject({ msg: 'Login failed! Check authentication credentials' });
+      if (!user) return Promise.reject({ msg: 'Login failed! Identifiants incorrects' });
 
       return new Promise((resolve, reject) => {
           bcrypt.compare(password, user.password, (err, res) => {
@@ -136,7 +141,7 @@ UserSchema.statics.findByCredentials = function (email, password) {
                 resolve(user);
               } else {
                 console.log("Password does not match!");
-                reject({ msg: 'Invalid credentials' });
+                reject({ msg: 'Identifiants incorrects' });
               }
           });
       });

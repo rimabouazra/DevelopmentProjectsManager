@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-
+import 'package:frontend/config/app_config.dart';
 import 'package:dart_date/dart_date.dart';
 import 'package:flutter/material.dart';
 import 'package:frontend/model/Subtask.dart';
@@ -9,41 +9,36 @@ import 'package:frontend/library/globals.dart' as globals;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TaskModel extends ChangeNotifier {
-  final Map<String, List<Task>> tasks = {
-  };
+  final Map<String, List<Task>> tasks = {};
   Map<String, List<Task>> get items => tasks;
-
   final Map<String, List<Task>> tasksByProject = {};
 
-  List<Task> getTasksByProject(String projectId) {
-    /*return tasks.values
-        .expand((taskList) => taskList)
-        .where((task) => task.projectId == projectId)
-        .toList();*/
-
-    if (tasksByProject.containsKey(projectId)) {
-      return tasksByProject[projectId]!;
-    }
-    return [];
+  Future<String?> _getToken() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('x-access-token');
   }
 
-  int countTasksByDay(DateTime _datetime) {
-    String _key = guessTodoKeyFromDate(_datetime);
-    if (tasks.containsKey(_key)) {
-      return tasks[_key]!
+  List<Task> getTasksByProject(String projectId) {
+    return tasksByProject[projectId] ?? [];
+  }
+
+  int countTasksByDay(DateTime datetime) {
+    String key = guessTodoKeyFromDate(datetime);
+    if (tasks.containsKey(key)) {
+      return tasks[key]!
           .where((task) =>
-              task.deadline.day == _datetime.day &&
-              task.deadline.month == _datetime.month &&
-              task.deadline.year == _datetime.year)
+              task.deadline.day == datetime.day &&
+              task.deadline.month == datetime.month &&
+              task.deadline.year == datetime.year)
           .length;
     }
     return 0;
   }
 
-  void add(Task _task) {
-    String _key = guessTodoKeyFromDate(_task.deadline);
-    if (tasks.containsKey(_key)) {
-      tasks[_key]!.add(_task);
+  void add(Task task) {
+    String key = guessTodoKeyFromDate(task.deadline);
+    if (tasks.containsKey(key)) {
+      tasks[key]!.add(task);
       notifyListeners();
     }
   }
@@ -59,23 +54,15 @@ class TaskModel extends ChangeNotifier {
   }
 
   String guessTodoKeyFromDate(DateTime deadline) {
-    if (deadline.isPast && !deadline.isToday) {
-      return globals.Late;
-    } else if (deadline.isToday) {
-      return globals.today;
-    } else if (deadline.isTomorrow) {
-      return globals.tomorrow;
-    } else if (deadline.getWeek == DateTime.now().getWeek &&
-        deadline.year == DateTime.now().year) {
-      return globals.thisWeek;
-    } else if (deadline.getWeek == DateTime.now().getWeek + 1 &&
-        deadline.year == DateTime.now().year) {
-      return globals.nextWeek;
-    } else if (deadline.isThisMonth) {
-      return globals.thisMonth;
-    } else {
-      return globals.later;
-    }
+    if (deadline.isPast && !deadline.isToday) return globals.Late;
+    if (deadline.isToday) return globals.today;
+    if (deadline.isTomorrow) return globals.tomorrow;
+    if (deadline.getWeek == DateTime.now().getWeek &&
+        deadline.year == DateTime.now().year) return globals.thisWeek;
+    if (deadline.getWeek == DateTime.now().getWeek + 1 &&
+        deadline.year == DateTime.now().year) return globals.nextWeek;
+    if (deadline.isThisMonth) return globals.thisMonth;
+    return globals.later;
   }
 
   void addTaskToProject(String projectId, Task task) {
@@ -107,137 +94,89 @@ class TaskModel extends ChangeNotifier {
   }
 
   Future<void> fetchTasksForProject(String projectId) async {
-    if (projectId.isEmpty) {
-      print("Error: projectId is empty, cannot fetch tasks.");
-      return;
-    }
-    if (tasksByProject.containsKey(projectId)) {
-      print("Tasks already fetched for project: $projectId");
-      return;
-    }
-    print("Fetching tasks for project ID: $projectId");
+    if (projectId.isEmpty) return;
+    if (tasksByProject.containsKey(projectId)) return;
 
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('x-access-token');
-    print("Token fetched: $token"); // Debugging
-
+    final token = await _getToken();
     if (token == null || token.isEmpty) {
-      print("Error: No token available for the user.");
-      throw Exception('Failed to fetch tasks: No token provided');
+      throw Exception('Session expirée. Veuillez vous reconnecter.');
     }
 
     try {
       final response = await http.get(
-        Uri.parse('http://localhost:3000/projects/$projectId/tasks'),
-        headers: {
-          'x-access-token': token,
-        },
-      );
+        Uri.parse('${AppConfig.baseUrl}/projects/$projectId/tasks'),
+        headers: {'x-access-token': token},
+      ).timeout(AppConfig.requestTimeout);
 
       if (response.statusCode == 200) {
-        print('Response body: ${response.body}'); // Debugging
         final List<dynamic> tasksJson = json.decode(response.body);
-        List<Task> tasks =
-            tasksJson.map((json) => Task.fromJson(json)).toList();
-
-        // Add the fetched tasks to the specific project
-       tasksByProject[projectId] = tasks.isNotEmpty ? tasks : [];
-       notifyListeners();
+        tasksByProject[projectId] =
+            tasksJson.map((j) => Task.fromJson(j)).toList();
+        notifyListeners();
       } else {
-        print('Failed to fetch tasks: ${response.statusCode}'); // Debugging
-        throw Exception('Failed to fetch tasks');
+        throw Exception('Erreur lors du chargement des tâches');
       }
     } catch (e) {
-      print("Failed to fetch tasks: $e");
-      throw Exception('Failed to fetch tasks: $e');
+      throw Exception('Erreur réseau: $e');
     }
   }
 
   Future<void> addTask(Task task) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('x-access-token');
-
+    final token = await _getToken();
     if (token == null || token.isEmpty) {
-      print("Error: No token available for the user.");
-      throw Exception('Failed to create task: No token provided');
+      throw Exception('Session expirée. Veuillez vous reconnecter.');
     }
 
-    print("Token fetched: $token"); // Debugging
+    final response = await http
+        .post(
+          Uri.parse('${AppConfig.baseUrl}/projects/${task.projectId}/tasks'),
+          headers: {
+            'Content-Type': 'application/json',
+            'x-access-token': token,
+          },
+          body: json.encode({
+            'title': task.title,
+            'description': task.description,
+            'dueDate': task.deadline.toIso8601String(),
+            'developerNames': task.developerNames,
+          }),
+        )
+        .timeout(AppConfig.requestTimeout);
 
-    try {
-      print(
-          "Sending request to create task for project ID: ${task.projectId}"); // Debugging
-      final response = await http.post(
-        Uri.parse('http://localhost:3000/projects/${task.projectId}/tasks'),
-        headers: {
-          'Content-Type': 'application/json',
-          'x-access-token': token,
-        },
-        body: json.encode({
-          "title": task.title,
-          "description": task.description,
-          "dueDate": task.deadline.toIso8601String(),
-        }),
-      );
-
-      print('Response status: ${response.statusCode}'); // Debugging
-      print('Response body: ${response.body}'); // Debugging
-
-      if (response.statusCode == 201) {
-        print("Task created successfully: ${response.body}");
-        Task newTask = Task.fromJson(json.decode(response.body));
-        await fetchTasksForProject(newTask.projectId);
-        addTaskToProject(newTask.projectId, newTask);
-        //await fetchTasksForProject(newTask.projectId);
-
-        notifyListeners();
-      } else {
-        throw Exception('Failed to create task');
-      }
-    } catch (e) {
-      print("Failed to create task: $e"); // Debugging
-      throw Exception('Failed to create task: $e');
+    if (response.statusCode == 201) {
+      final newTask = Task.fromJson(json.decode(response.body));
+      // Forcer le rechargement depuis l'API
+      tasksByProject.remove(newTask.projectId);
+      await fetchTasksForProject(newTask.projectId);
+      notifyListeners();
+    } else {
+      throw Exception('Erreur lors de la création de la tâche');
     }
   }
 
   Future<void> fetchTasksForAllProjects(List<String> projectIds) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('x-access-token');
-
+    final token = await _getToken();
     if (token == null || token.isEmpty) {
-      print("Error: No token available for the user.");
-      throw Exception('Failed to fetch tasks: No token provided');
+      throw Exception('Session expirée. Veuillez vous reconnecter.');
     }
 
-    for (String projectId in projectIds) {
-      if (tasksByProject.containsKey(projectId)) {
-      print("Tasks already fetched for project ID: $projectId");
-      continue;  // Skip fetching if tasks are already available
-      }
-      print("Fetching tasks for project ID: $projectId");
+    for (final projectId in projectIds) {
+      if (tasksByProject.containsKey(projectId)) continue;
 
       try {
         final response = await http.get(
-          Uri.parse('http://localhost:3000/projects/$projectId/tasks'),
-          headers: {
-            'x-access-token': token,
-          },
-        );
+          Uri.parse('${AppConfig.baseUrl}/projects/$projectId/tasks'),
+          headers: {'x-access-token': token},
+        ).timeout(AppConfig.requestTimeout);
 
         if (response.statusCode == 200) {
           final List<dynamic> tasksJson = json.decode(response.body);
-          List<Task> tasks =
-              tasksJson.map((json) => Task.fromJson(json)).toList();
-
-          // Add the fetched tasks to the specific project
-          tasksByProject[projectId] = tasks.isNotEmpty ? tasks : [];
-        notifyListeners();
-        } else {
-          print(
-              'Failed to fetch tasks for project $projectId: ${response.statusCode}');
+          tasksByProject[projectId] =
+              tasksJson.map((j) => Task.fromJson(j)).toList();
+          notifyListeners();
         }
       } catch (e) {
-        print("Failed to fetch tasks for project $projectId: $e");
+        print('Erreur chargement tâches projet $projectId: $e');
       }
     }
   }
@@ -246,7 +185,7 @@ class TaskModel extends ChangeNotifier {
     final taskIndex = tasksByProject[task.projectId]?.indexOf(task);
     final subtaskIndex = task.subtasks.indexOf(subtask);
 
-    if (taskIndex != -1 && subtaskIndex != -1) {
+    if (taskIndex != null && taskIndex != -1 && subtaskIndex != -1) {
       task.subtasks[subtaskIndex].isCompleted = !subtask.isCompleted;
       updateTask(task);
       notifyListeners();
@@ -254,35 +193,35 @@ class TaskModel extends ChangeNotifier {
   }
 
   void addCommentToSubtask(Task task, Subtask subtask, String commentText) {
-  final taskIndex = tasksByProject[task.projectId]?.indexOf(task);
-  final subtaskIndex = task.subtasks.indexOf(subtask);
-
-  if (taskIndex != -1 && subtaskIndex != -1) {
-    final developerId = 'currentDeveloperId'; // Replace with actual developer ID logic
-    subtask.addComment(developerId, commentText);
-    updateTask(task);
-    notifyListeners();
+    final taskIndex = tasksByProject[task.projectId]?.indexOf(task);
+    final subtaskIndex = task.subtasks.indexOf(subtask);
+    if (taskIndex != null && taskIndex != -1 && subtaskIndex != -1) {
+      subtask.addComment('currentDeveloperId', commentText);
+      updateTask(task);
+      notifyListeners();
+    }
   }
-}
 
-void checkIfAllSubtasksDone(Task task) {
-  if (task.subtasks.every((subtask) => subtask.isCompleted)) {
-    task.status = true;
-    updateTask(task); 
-    notifyListeners();
+  void checkIfAllSubtasksDone(Task task) {
+    if (task.subtasks.every((subtask) => subtask.isCompleted)) {
+      task.status = true;
+      updateTask(task);
+      notifyListeners();
+    }
   }
-}
-void checkIfAllTasksDone(String projectId) {
-  if (tasksByProject[projectId]?.every((task) => task.status == true) ?? false) {
-    print('All tasks in project $projectId are done. Mark the project as complete.');
-  }
-}
 
-void removeTasksForProject(String projectId) {
-  if (tasksByProject.containsKey(projectId)) {
-    tasksByProject.remove(projectId);
-    notifyListeners();
+  void checkIfAllTasksDone(String projectId) {
+    if (tasksByProject[projectId]?.every((task) => task.status == true) ??
+        false) {
+      print(
+          'All tasks in project $projectId are done. Mark the project as complete.');
+    }
   }
-}
 
+  void removeTasksForProject(String projectId) {
+    if (tasksByProject.containsKey(projectId)) {
+      tasksByProject.remove(projectId);
+      notifyListeners();
+    }
+  }
 }
